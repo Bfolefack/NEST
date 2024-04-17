@@ -394,6 +394,27 @@ int decode_and_execute(uint32_t ins)
             break;
         }
     }
+
+    // how much to increment the program counter
+    switch (mode)
+    {
+    case IMPLIED:
+    case ACCUMULATOR:
+        return 1;
+    case IMMEDIATE:
+    case ZERO_PAGE:
+    case ZERO_PAGE_X:
+    case ZERO_PAGE_Y:
+    case INDIRECT_X:
+    case INDIRECT_Y:
+    case RELATIVE:
+        return 2;
+    case ABSOLUTE:
+    case ABSOLUTE_X:
+    case ABSOLUTE_Y:
+    case INDIRECT:
+        return 3;
+    }
 }
 
 int address_to_immediate(uint16_t imm, AddressingMode mode)
