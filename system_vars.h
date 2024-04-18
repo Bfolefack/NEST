@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -35,4 +37,5 @@ typedef enum AddressingMode {
     RELATIVE
 } AddressingMode;
 
+extern AddressingMode mode;
 extern uint8_t memory[4000];

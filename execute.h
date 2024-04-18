@@ -1,3 +1,5 @@
+#pragma once
+
 extern void init();
 extern void BRK();
 extern void RTI();
@@ -22,3 +24,16 @@ extern void TXS();
 extern void TAX();
 extern void TSX();
 extern void DEX();
+extern void JMP(uint16_t imm);
+extern void BPL(int8_t imm);
+extern void JSR(uint16_t imm);
+extern void BMI(int8_t imm);
+extern void BVC(int8_t imm);
+extern void BVS(int8_t imm);
+extern void BCC(int8_t imm);
+extern void LDY(uint16_t imm);
+extern void BCS(int8_t imm);
+extern void CPY(uint16_t imm);
+extern void BNE(int8_t imm);
+extern void CPX(uint16_t imm);
+extern void BEQ(int8_t imm);

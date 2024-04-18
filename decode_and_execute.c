@@ -9,7 +9,7 @@ int decode_and_execute(uint32_t ins)
     uint8_t lo = opcode & 0x0F;
     uint16_t imm = 0;
 
-    AddressingMode mode = IMPLIED;
+    mode = IMPLIED;
 
     switch (opcode)
     {
