@@ -1,5 +1,6 @@
 #include "decode_and_execute.h"
 #include "system_vars.h"
+#include "execute.h"
 
 int decode_and_execute(uint32_t ins)
 {
@@ -428,6 +429,7 @@ int address_to_immediate(uint16_t imm, AddressingMode mode)
 
 int main()
 {
+    init();
     decode_and_execute(0);
     printf("hello");
     return 0;
