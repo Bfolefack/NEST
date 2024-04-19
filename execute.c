@@ -213,10 +213,10 @@ void BCC(int8_t imm) {
     }
 }
 
-void LDY(int8_t imm) {
+void LDY(uint8_t imm) {
     regs.Y = imm;
-    regs.flags.N = imm < 1;
-    regs.flags.Z = imm == 0;
+    regs.flags.N = regs.Y >> 7;
+    regs.flags.Z = regs.Y == 0;
 }
 
 void BCS(int8_t imm) {
