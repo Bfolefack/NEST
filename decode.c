@@ -418,12 +418,61 @@ int decode_and_execute(uint32_t ins)
     }
 }
 
+uint16_t load_word(uint16_t imm){
+    return (((uint16_t) memory[imm+1]) << 8) | memory[imm];
+}
+
 int address_to_immediate(uint16_t imm, AddressingMode mode)
 {
     switch (mode)
     {
     case IMPLIED:
-        return 0;
+        imm = 0;
+        break;
+    case ACCUMULATOR:
+        imm = regs.A;
+        break;
+    case IMMEDIATE:
+        imm = imm;
+        break;
+    case ABSOLUTE:
+        imm = (imm & 0xFF) << 8 | (imm >> 8);
+        imm = memory[imm];
+        break;
+    case ABSOLUTE_X:
+        imm = (imm & 0xFF) << 8 | (imm >> 8);
+        imm = memory[imm + regs.X];
+        break;
+    case ABSOLUTE_Y:
+        imm = (imm & 0xFF) << 8 | (imm >> 8);
+        imm = memory[imm + regs.Y];
+        break;
+    case ZERO_PAGE:
+        imm = memory[imm];
+        break;
+    case ZERO_PAGE_X:
+        imm = memory[(uint8_t)(imm + regs.X)];
+        break;
+    case ZERO_PAGE_Y:
+        imm = memory[(uint8_t)(imm + regs.Y)];
+        break;
+    case INDIRECT:
+        imm = (imm & 0xFF) << 8 | (imm >> 8);
+        imm = load_word(imm);
+        imm = load_word(imm);
+        break;
+    case INDIRECT_X:
+        imm = (uint8_t)(imm + regs.X);
+        imm = load_word(imm);
+        imm = memory[imm];
+        break;
+    case INDIRECT_Y:
+        imm = load_word(imm) + regs.Y;
+        imm = memory[imm];
+        break;
+    case RELATIVE:
+        imm = regs.PC + imm;
+        break;
     }
     return imm;
 }

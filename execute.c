@@ -1,8 +1,6 @@
 #include "system_vars.h"
 #include "execute.h"
 
-Registers regs;
-uint8_t memory[4000];
 AddressingMode mode;
 bool B = 0; // Break flag
 

@@ -39,3 +39,4 @@ typedef enum AddressingMode {
 
 extern AddressingMode mode;
 extern uint8_t memory[4000];
+extern Registers regs;
