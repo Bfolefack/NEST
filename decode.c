@@ -1,4 +1,4 @@
-#include "decode_and_execute.h"
+#include "decode.h"
 #include "system_vars.h"
 #include "execute.h"
 
@@ -425,6 +425,7 @@ int address_to_immediate(uint16_t imm, AddressingMode mode)
     case IMPLIED:
         return 0;
     }
+    return imm;
 }
 
 int main()
