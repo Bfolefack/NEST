@@ -16,8 +16,6 @@ typedef struct Flags {
     uint8_t N : 1; // Negative
 } Flags;
 
-
-
 typedef struct Registers {
     uint8_t A; // Accumulator
     uint8_t X; // X register

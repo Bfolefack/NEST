@@ -31,7 +31,8 @@ uint8_t pull() {
 }
 
 uint8_t flags_to_byte(Flags flags) {
-    return (flags.C << 0) | (flags.Z << 1) | (flags.I << 2) | (flags.D << 3) | (flags.B << 4) | (flags.J << 5) | (flags.V << 6) | (flags.N << 7);
+    return (flags.C << 0) | (flags.Z << 1) | (flags.I << 2) | (flags.D << 3) | 
+           (flags.B << 4) | (flags.J << 5) | (flags.V << 6) | (flags.N << 7);
 }
 
 Flags byte_to_flags(uint8_t byte) {
@@ -47,40 +48,6 @@ Flags byte_to_flags(uint8_t byte) {
     return flags;
 }
 
-// void regs.flags.Flags flag, bool set) {
-//     if (flag == B) {
-//         B = set;
-//         return;
-//     }
-//     int bit_number;
-//     switch (flag) {
-//         case N:
-//             bit_number = 7;
-//             break;
-//         case V:
-//             bit_number = 6;
-//             break;
-//         case D:
-//             bit_number = 3;
-//             break;
-//         case I:
-//             bit_number = 2;
-//             break;
-//         case Z:
-//             bit_number = 1;
-//             break;
-//         case C:
-//             bit_number = 0;
-//             break;
-//     }
-//     if (set) {
-//         regs.P |= 1 << bit_number;
-//     }
-//     else {
-//         regs.P &= ~(1 << bit_number);
-//     }
-// }
-
 void interrupt() {
     // TO DO 
     RTI();
@@ -93,17 +60,20 @@ void BRK() {
     push(regs.PC + 2);
     push(flags_to_byte(regs.flags));
     interrupt();
+    regs.flags.J = 1;
 }
 
 void RTI() {
     regs.flags = byte_to_flags(pull());
     regs.PC = pull();
     regs.PC |= pull() << 8;
+    regs.flags.J = 1;
 }
 
 void RTS() {
     regs.PC = pull();
     regs.PC |= pull() << 8;
+    regs.flags.J = 1;
 }
 
 void PHP() {
@@ -243,10 +213,10 @@ void BCC(int8_t imm) {
     }
 }
 
-void LDY(uint16_t imm) {
+void LDY(int8_t imm) {
     regs.Y = imm;
-    regs.flags.N = regs.Y < 0;
-    regs.flags.Z = regs.Y == 0;
+    regs.flags.N = imm < 1;
+    regs.flags.Z = imm == 0;
 }
 
 void BCS(int8_t imm) {
@@ -256,8 +226,10 @@ void BCS(int8_t imm) {
     }
 }
 
-void CPY(uint16_t imm) {
-    
+void CPY(uint8_t imm) {
+    regs.flags.N = regs.Y < imm;
+    regs.flags.Z = regs.Y == imm;
+    regs.flags.C = regs.Y >= imm;
 }
 
 void BNE(int8_t imm) {
@@ -267,8 +239,10 @@ void BNE(int8_t imm) {
     }
 }
 
-void CPX(uint16_t imm) {
-
+void CPX(uint8_t imm) {
+    regs.flags.N = regs.X < imm;
+    regs.flags.Z = regs.X == imm;
+    regs.flags.C = regs.X < imm;
 }
 
 void BEQ(int8_t imm) {
@@ -276,4 +250,26 @@ void BEQ(int8_t imm) {
         regs.PC = regs.PC + imm;
         regs.flags.J = 1;
     }
+}
+
+void BIT(int8_t imm) {
+    regs.flags.N = imm >> 7;
+    regs.flags.V = (imm >> 6) & 1;
+    regs.flags.Z = (regs.A & imm) == 0;
+}
+
+void STY(uint16_t imm) {
+    memory[imm] = regs.Y;
+}
+
+void ORA(int8_t imm) {
+    regs.A = (regs.A & imm);
+    regs.flags.N = regs.A >> 7 == 1;
+    regs.flags.Z = regs.A == 0;
+}
+
+void AND(int8_t imm) {
+    regs.A = (regs.A & imm);
+    regs.flags.N = regs.A >> 7 == 1;
+    regs.flags.Z = regs.A == 0;
 }
