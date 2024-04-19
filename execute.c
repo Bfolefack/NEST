@@ -171,9 +171,9 @@ void JMP(uint16_t imm) {
     regs.flags.J = 1;
 }
 
-void BPL(int8_t imm) {
+void BPL(uint16_t imm) {
     if (regs.flags.N == 0) {
-        regs.PC = regs.PC + imm;
+        regs.PC = imm;
         regs.flags.J = 1;
     }
 }
@@ -185,91 +185,168 @@ void JSR(uint16_t imm) {
     regs.flags.J = 1;
 }
 
-void BMI(int8_t imm) {
+void BMI(uint16_t imm) {
     if (regs.flags.N == 1) {
-        regs.PC = regs.PC + imm;
+        regs.PC = imm;
         regs.flags.J = 1;
     }
 }
 
-void BVC(int8_t imm) {
+void BVC(uint16_t imm) {
     if (regs.flags.V == 0) {
-        regs.PC = regs.PC + imm;
+        regs.PC = imm;
         regs.flags.J = 1;
     }
 }
 
-void BVS(int8_t imm) {
+void BVS(uint16_t imm) {
     if (regs.flags.V == 1) {
-        regs.PC = regs.PC + imm;
+        regs.PC = imm;
         regs.flags.J = 1;
     }
 }
 
-void BCC(int8_t imm) {
+void BCC(uint16_t imm) {
     if (regs.flags.C == 0) {
-        regs.PC = regs.PC + imm;
+        regs.PC = imm;
         regs.flags.J = 1;
     }
 }
 
-void LDY(int8_t imm) {
-    regs.Y = imm;
-    regs.flags.N = imm < 1;
-    regs.flags.Z = imm == 0;
+void LDY(uint16_t imm) {
+    regs.Y = memory[imm];
+    regs.flags.N = regs.Y >> 7;
+    regs.flags.Z = regs.Y == 0;
 }
 
-void BCS(int8_t imm) {
+void BCS(uint16_t imm) {
     if (regs.flags.C == 1) {
-        regs.PC = regs.PC + imm;
+        regs.PC = imm;
         regs.flags.J = 1;
     }
 }
 
-void CPY(uint8_t imm) {
-    regs.flags.N = regs.Y < imm;
-    regs.flags.Z = regs.Y == imm;
-    regs.flags.C = regs.Y >= imm;
+void CPY(uint16_t imm) {
+    regs.flags.N = regs.Y < memory[imm];
+    regs.flags.Z = regs.Y == memory[imm];
+    regs.flags.C = regs.Y >= memory[imm];
 }
 
-void BNE(int8_t imm) {
+void BNE(uint16_t imm) {
     if (regs.flags.Z == 0) {
-        regs.PC = regs.PC + imm;
+        regs.PC = imm;
         regs.flags.J = 1;
     }
 }
 
-void CPX(uint8_t imm) {
-    regs.flags.N = regs.X < imm;
-    regs.flags.Z = regs.X == imm;
-    regs.flags.C = regs.X < imm;
+void CPX(uint16_t imm) {
+    regs.flags.N = regs.X < memory[imm];
+    regs.flags.Z = regs.X == memory[imm];
+    regs.flags.C = regs.X < memory[imm];
 }
 
-void BEQ(int8_t imm) {
+void BEQ(uint16_t imm) {
     if (regs.flags.Z == 1) {
-        regs.PC = regs.PC + imm;
+        regs.PC = imm;
         regs.flags.J = 1;
     }
 }
 
-void BIT(int8_t imm) {
-    regs.flags.N = imm >> 7;
-    regs.flags.V = (imm >> 6) & 1;
-    regs.flags.Z = (regs.A & imm) == 0;
+void BIT(uint16_t imm) {
+    regs.flags.N = memory[imm] >> 7;
+    regs.flags.V = (memory[imm] >> 6) & 1;
+    regs.flags.Z = (regs.A & memory[imm]) == 0;
 }
 
 void STY(uint16_t imm) {
     memory[imm] = regs.Y;
 }
 
-void ORA(int8_t imm) {
-    regs.A = (regs.A & imm);
+void ORA(uint16_t imm) {
+    regs.A = (regs.A & memory[imm]);
     regs.flags.N = regs.A >> 7 == 1;
     regs.flags.Z = regs.A == 0;
 }
 
-void AND(int8_t imm) {
-    regs.A = (regs.A & imm);
+void AND(uint16_t imm) {
+    regs.A = (regs.A & memory[imm]);
     regs.flags.N = regs.A >> 7 == 1;
     regs.flags.Z = regs.A == 0;
 }
+
+void EOR(uint16_t imm) {
+    regs.A = (regs.A ^ memory[imm]);
+    regs.flags.N = regs.A >> 7 == 1;
+    regs.flags.Z = regs.A == 0;
+}
+
+void ADC(uint16_t imm) {
+    uint16_t result = regs.A + memory[imm];
+    regs.A = result;
+    regs.flags.N = (regs.A >> 7) == 1;
+    regs.flags.Z = regs.A == 0;
+    regs.flags.C = ((result & 0x100) >> 8) == 1;
+    regs.flags.V = ((result & 0x100) >> 8) ==  1;
+}
+
+void STA(uint16_t imm) {
+    memory[imm] = regs.A;
+}
+
+void LDA(uint16_t imm) {
+    regs.A = memory[imm];
+    regs.flags.N = (regs.A >> 7) == 1;
+    regs.flags.Z = regs.A == 0;
+}
+
+void CMP(uint16_t imm) {
+    regs.flags.C = regs.A >= memory[imm];
+    regs.flags.Z = regs.A == memory[imm];
+    regs.flags.N = ((regs.A - memory[imm]) >> 7) == 1;
+}
+
+void SBC(uint16_t imm) {
+    int16_t result = regs.A - memory[imm] - (1 - regs.flags.C);
+    regs.A = result;
+    regs.flags.C = ((result & 0x100) >> 7) == 1;
+    regs.flags.Z = regs.A == 0;
+    regs.flags.V = ((result & 0x100) >> 7) == 1;
+    regs.flags.N = (regs.A >> 7) == 1;
+}
+
+
+void ASL(uint16_t imm, bool accumulator) {
+    if (accumulator) {
+        imm = (uint8_t)imm;
+        regs.A = imm << 1;
+        regs.flags.C = (imm >> 7);
+        regs.flags.Z = (regs.A == 0);
+        regs.flags.N = (regs.A >> 7) == 1;
+    }
+    else {
+        regs.flags.C = (memory[imm] >> 7);
+        memory[imm] = memory[imm] << 1;
+        regs.flags.Z = (memory[imm] == 0);
+        regs.flags.N = (memory[imm] >> 7) == 1;
+    }
+}
+
+void ROL(uint8_t imm, bool accumulator) {
+    uint8_t oldCarry = regs.flags.C;
+    if (accumulator) {
+        imm = (uint8_t)imm;
+        regs.A = imm << 1;
+        regs.A = (regs.A & (0b11111110 + oldCarry));
+        regs.flags.C = (imm >> 7);
+        regs.flags.Z = (regs.A == 0);
+        regs.flags.N = (regs.A >> 7) == 1;
+    }
+    else {
+        regs.flags.C = (memory[imm] >> 7);
+        memory[imm] = memory[imm] << 1;
+        memory[imm] = memory[imm] & (0b11111110 + oldCarry);
+        regs.flags.Z = (memory[imm] == 0);
+        regs.flags.N = (memory[imm] >> 7) == 1;
+    }
+}
+

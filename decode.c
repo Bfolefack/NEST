@@ -436,38 +436,33 @@ int address_to_immediate(uint16_t imm, AddressingMode mode)
         break;
     case ABSOLUTE:
         imm = (imm & 0xFF) << 8 | (imm >> 8);
-        imm = memory[imm];
         break;
     case ABSOLUTE_X:
         imm = (imm & 0xFF) << 8 | (imm >> 8);
-        imm = memory[imm + regs.X];
+        imm = imm + regs.X;
         break;
     case ABSOLUTE_Y:
         imm = (imm & 0xFF) << 8 | (imm >> 8);
-        imm = memory[imm + regs.Y];
+        imm = imm + regs.Y;
         break;
     case ZERO_PAGE:
-        imm = memory[imm];
         break;
     case ZERO_PAGE_X:
-        imm = memory[(uint8_t)(imm + regs.X)];
+        imm = (uint8_t)(imm + regs.X);
         break;
     case ZERO_PAGE_Y:
-        imm = memory[(uint8_t)(imm + regs.Y)];
+        imm = (uint8_t)(imm + regs.Y);
         break;
     case INDIRECT:
         imm = (imm & 0xFF) << 8 | (imm >> 8);
-        imm = load_word(imm);
         imm = load_word(imm);
         break;
     case INDIRECT_X:
         imm = (uint8_t)(imm + regs.X);
         imm = load_word(imm);
-        imm = memory[imm];
         break;
     case INDIRECT_Y:
         imm = load_word(imm) + regs.Y;
-        imm = memory[imm];
         break;
     case RELATIVE:
         imm = regs.PC + imm;

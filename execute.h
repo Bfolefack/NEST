@@ -31,7 +31,7 @@ extern void BMI(int8_t imm);
 extern void BVC(int8_t imm);
 extern void BVS(int8_t imm);
 extern void BCC(int8_t imm);
-extern void LDY(uint16_t imm);
+extern void LDY(uint8_t imm);
 extern void BCS(int8_t imm);
 extern void CPY(uint8_t imm);
 extern void BNE(int8_t imm);
