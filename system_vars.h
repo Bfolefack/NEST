@@ -1,7 +1,22 @@
-#pragma once
+#ifndef SYSTEM_VARS_H
+#define SYSTEM_VARS_H
 
 #include <stdbool.h>
 #include <stdint.h>
+
+
+typedef struct Flags {
+    uint8_t C : 1; // Carry
+    uint8_t Z : 1; // Zero
+    uint8_t I : 1; // Interrupt
+    uint8_t D : 1; // Decimal
+    uint8_t B : 1; // Break
+    uint8_t J : 1; // Jumped
+    uint8_t V : 1; // Overflow
+    uint8_t N : 1; // Negative
+} Flags;
+
+
 
 typedef struct Registers {
     uint8_t A; // Accumulator
@@ -9,17 +24,8 @@ typedef struct Registers {
     uint8_t Y; // Y register
     uint16_t PC; // Program counter
     uint8_t S; // Stack pointer
-    uint8_t P; // Status register (NVxxDIZC)
+    Flags flags;
 } Registers;
-
-typedef enum Flags {
-    N, // Negative
-    Z, // Zero
-    C, // Carry
-    I, // Interrupt
-    D, // Decimal
-    V // Overflow
-} Flags;
 
 typedef enum AddressingMode {
     ACCUMULATOR,
@@ -37,6 +43,7 @@ typedef enum AddressingMode {
     RELATIVE
 } AddressingMode;
 
-extern AddressingMode mode;
 extern uint8_t memory[4000];
 extern Registers regs;
+
+#endif

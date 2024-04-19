@@ -4,12 +4,11 @@
 
 int decode_and_execute(uint32_t ins)
 {
+    AddressingMode mode = IMPLIED;
     uint8_t opcode = ins >> 24;
     uint8_t hi = opcode >> 4;
     uint8_t lo = opcode & 0x0F;
     uint16_t imm = 0;
-
-    mode = IMPLIED;
 
     switch (opcode)
     {
@@ -36,7 +35,7 @@ int decode_and_execute(uint32_t ins)
         SEC();
         break;
     case 0x48: // PHA
-        PHA();
+        // PHA();
         break;
     case 0x58: // CLI
         CLI();
@@ -60,10 +59,10 @@ int decode_and_execute(uint32_t ins)
         CLV();
         break;
     case 0xC8: // INY
-        INY();
+        // INY();
         break;
     case 0xD8: // CLD
-        CLD();
+        // CLD();
         break;
     case 0xE8: // INX
         INX();
@@ -206,10 +205,10 @@ int decode_and_execute(uint32_t ins)
             switch (hi / 2)
             {
             case 0x1:
-                BIT(imm);
+                // BIT(imm);
                 break;
             case 0x4:
-                STY(imm);
+                // STY(imm);
                 break;
             case 0x5:
                 LDY(imm);
@@ -284,28 +283,28 @@ int decode_and_execute(uint32_t ins)
             switch (hi / 2)
             {
             case 0x0:
-                ORA(imm);
+                // ORA(imm);
                 break;
             case 0x1:
-                AND(imm);
+                // AND(imm);
                 break;
             case 0x2:
-                EOR(imm);
+                // EOR(imm);
                 break;
             case 0x3:
-                ADC(imm);
+                // ADC(imm);
                 break;
             case 0x4:
-                STA(imm);
+                // STA(imm);
                 break;
             case 0x5:
-                LDA(imm);
+                // LDA(imm);
                 break;
             case 0x6:
-                CMP(imm);
+                // CMP(imm);
                 break;
             case 0x7:
-                SBC(imm);
+                // SBC(imm);
                 break;
             }
             break;
@@ -368,28 +367,28 @@ int decode_and_execute(uint32_t ins)
             switch (hi / 2)
             {
             case 0x0:
-                ASL(imm);
+                // ASL(imm);
                 break;
             case 0x1:
-                ROL(imm);
+                // ROL(imm);
                 break;
             case 0x2:
-                LSR(imm);
+                // LSR(imm);
                 break;
             case 0x3:
-                ROR(imm);
+                // ROR(imm);
                 break;
             case 0x4:
-                STX(imm);
+                // STX(imm);
                 break;
             case 0x5:
-                LDX(imm);
+                // LDX(imm);
                 break;
             case 0x6:
-                DEC(imm);
+                // DEC(imm);
                 break;
             case 0x7:
-                INC(imm);
+                // INC(imm);
                 break;
             }
             break;

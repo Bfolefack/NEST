@@ -2,8 +2,6 @@
 #include "execute.h"
 
 AddressingMode mode;
-bool B = 0; // Break flag
-
 const uint16_t STACK_BASE = 0x0100; 
 
 void init() {
@@ -12,7 +10,14 @@ void init() {
     regs.Y = 0;
     regs.PC = 0xFFFC;
     regs.S = 0xFF; // Relative address
-    regs.P = 0b00000100; // I = 1
+    regs.flags.C = 0;
+    regs.flags.Z = 0;
+    regs.flags.I = 1;
+    regs.flags.D = 0;
+    regs.flags.B = 0;
+    regs.flags.J = 0;
+    regs.flags.V = 0;
+    regs.flags.N = 0;
 }
 
 void push(uint8_t value) {
@@ -25,67 +30,56 @@ uint8_t pull() {
     return memory[STACK_BASE + regs.S];
 }
 
-bool get_flag(Flags flag) {
-    if (flag == B) {
-        return B;
-    }
-    int bit_number;
-    switch (flag) {
-        case N:
-            bit_number = 7;
-            break;
-        case V:
-            bit_number = 6;
-            break;
-        case D:
-            bit_number = 3;
-            break;
-        case I:
-            bit_number = 2;
-            break;
-        case Z:
-            bit_number = 1;
-            break;
-        case C:
-            bit_number = 0;
-            break;
-    }
-    return (regs.P >> bit_number) & 1;
+uint8_t flags_to_byte(Flags flags) {
+    return (flags.C << 0) | (flags.Z << 1) | (flags.I << 2) | (flags.D << 3) | (flags.B << 4) | (flags.J << 5) | (flags.V << 6) | (flags.N << 7);
 }
 
-void assign_flag(Flags flag, bool set) {
-    if (flag == B) {
-        B = set;
-        return;
-    }
-    int bit_number;
-    switch (flag) {
-        case N:
-            bit_number = 7;
-            break;
-        case V:
-            bit_number = 6;
-            break;
-        case D:
-            bit_number = 3;
-            break;
-        case I:
-            bit_number = 2;
-            break;
-        case Z:
-            bit_number = 1;
-            break;
-        case C:
-            bit_number = 0;
-            break;
-    }
-    if (set) {
-        regs.P |= 1 << bit_number;
-    }
-    else {
-        regs.P &= ~(1 << bit_number);
-    }
+Flags byte_to_flags(uint8_t byte) {
+    Flags flags;
+    flags.C = (byte >> 0) & 1;
+    flags.Z = (byte >> 1) & 1;
+    flags.I = (byte >> 2) & 1;
+    flags.D = (byte >> 3) & 1;
+    flags.B = (byte >> 4) & 1;
+    flags.J = (byte >> 5) & 1;
+    flags.V = (byte >> 6) & 1;
+    flags.N = (byte >> 7) & 1;
+    return flags;
 }
+
+// void regs.flags.Flags flag, bool set) {
+//     if (flag == B) {
+//         B = set;
+//         return;
+//     }
+//     int bit_number;
+//     switch (flag) {
+//         case N:
+//             bit_number = 7;
+//             break;
+//         case V:
+//             bit_number = 6;
+//             break;
+//         case D:
+//             bit_number = 3;
+//             break;
+//         case I:
+//             bit_number = 2;
+//             break;
+//         case Z:
+//             bit_number = 1;
+//             break;
+//         case C:
+//             bit_number = 0;
+//             break;
+//     }
+//     if (set) {
+//         regs.P |= 1 << bit_number;
+//     }
+//     else {
+//         regs.P &= ~(1 << bit_number);
+//     }
+// }
 
 void interrupt() {
     // TO DO 
@@ -93,16 +87,16 @@ void interrupt() {
 }
 
 void BRK() {
-    assign_flag(I, 1);
-    assign_flag(B, 1);
+    regs.flags.I = 1;
+    regs.flags.B = 1;
     push((regs.PC + 2) >> 8);
     push(regs.PC + 2);
-    push(regs.P);
+    push(flags_to_byte(regs.flags));
     interrupt();
 }
 
 void RTI() {
-    regs.P = pull();
+    regs.flags = byte_to_flags(pull());
     regs.PC = pull();
     regs.PC |= pull() << 8;
 }
@@ -110,133 +104,107 @@ void RTI() {
 void RTS() {
     regs.PC = pull();
     regs.PC |= pull() << 8;
-    regs.PC++;
 }
 
 void PHP() {
-    push(regs.P);
-    regs.PC++;
+    push(flags_to_byte(regs.flags));
 }
 
 void CLC() {
-    assign_flag(C, 0);
-    regs.PC++;
+    regs.flags.C = 0;
 }
 
 void PLP() {
-    regs.P = pull();
-    regs.PC++;
+    regs.flags = byte_to_flags(pull());
 }
 
 void SEC() {
-    assign_flag(C, 1);
-    regs.PC++;
+    regs.flags.C = 1;
 }
 
 void CLI() {
-    assign_flag(I, 0);
-    regs.PC++;
+    regs.flags.I = 0;
 }
 
 void PLA() {
     regs.A = pull();
-    assign_flag(N, regs.A < 0);
-    assign_flag(Z, regs.A == 0);
-    regs.PC++;
+    regs.flags.N = regs.A < 0;
+    regs.flags.Z = regs.A == 0;
 }
 
 void SEI() {
-    assign_flag(I, 1);
-    regs.PC++;
+    regs.flags.I = 1;
 }
 
 void DEY() {
     regs.Y--;
-    assign_flag(N, regs.Y < 0);
-    assign_flag(Z, regs.Y == 0);
-    regs.PC++;
+    regs.flags.N = regs.Y < 0;
+    regs.flags.Z = regs.Y == 0;
 }
 
 void TYA() {
     regs.A = regs.Y;
-    assign_flag(N, regs.A < 0);
-    assign_flag(Z, regs.A == 0);
-    regs.PC++;
+    regs.flags.N = regs.A < 0;
+    regs.flags.Z = regs.A == 0;
 }
 
 void TAY() {
     regs.Y = regs.A;
-    assign_flag(N, regs.Y < 0);
-    assign_flag(Z, regs.Y == 0);
-    regs.PC++;
+    regs.flags.N = regs.Y < 0;
+    regs.flags.Z = regs.Y == 0;
 }
 
 void CLV() {
-    assign_flag(V, 0);
-    regs.PC++;
+    regs.flags.V = 0;
 }
 
 void INX() {
     regs.X++;
-    assign_flag(N, regs.X < 0);
-    assign_flag(Z, regs.X == 0);
-    regs.PC++;
+    regs.flags.N = regs.X < 0;
+    regs.flags.Z = regs.X == 0;
 }
 
 void SED() {
-    assign_flag(D, 1);
-    regs.PC++;
+    regs.flags.D = 1;
 }
 
 void TXA() {
     regs.A = regs.X;
-    assign_flag(N, regs.A < 0);
-    assign_flag(Z, regs.A == 0);
-    regs.PC++;
+    regs.flags.N = regs.A < 0;
+    regs.flags.Z = regs.A == 0;
 }
 
 void TXS() {
     regs.S = regs.X;
-    regs.PC++;
 }
 
 void TAX() {
     regs.X = regs.A;
-    assign_flag(N, regs.X < 0);
-    assign_flag(Z, regs.X == 0);
-    regs.PC++;
+    regs.flags.N = regs.X < 0;
+    regs.flags.Z = regs.X == 0;
 }
 
 void TSX() {
     regs.X = regs.S;
-    assign_flag(N, regs.X < 0);
-    assign_flag(Z, regs.X == 0);
-    regs.PC++;
+    regs.flags.N = regs.X < 0;
+    regs.flags.Z = regs.X == 0;
 }
 
 void DEX() {
     regs.X--;
-    assign_flag(N, regs.X < 0);
-    assign_flag(Z, regs.X == 0);
-    regs.PC++;
+    regs.flags.N = regs.X < 0;
+    regs.flags.Z = regs.X == 0;
 }
 
 void JMP(uint16_t imm) {
-    if (mode == ABSOLUTE) {
-        regs.PC = imm;
-    }
-    else {
-        regs.PC = memory[imm];
-        regs.PC |= (memory[imm + 1] << 8);
-    }
+    regs.PC = imm;
+    regs.flags.J = 1;
 }
 
 void BPL(int8_t imm) {
-    if (get_flag(N) == 0) {
+    if (regs.flags.N == 0) {
         regs.PC = regs.PC + imm;
-    }
-    else {
-        regs.PC += 2;
+        regs.flags.J = 1;
     }
 }
 
@@ -244,90 +212,58 @@ void JSR(uint16_t imm) {
     push((regs.PC + 2) >> 8);
     push(regs.PC + 2);
     regs.PC = imm;
+    regs.flags.J = 1;
 }
 
 void BMI(int8_t imm) {
-    if (get_flag(N) == 1) {
+    if (regs.flags.N == 1) {
         regs.PC = regs.PC + imm;
-    }
-    else {
-        regs.PC = regs.PC + 2;
+        regs.flags.J = 1;
     }
 }
 
 void BVC(int8_t imm) {
-    if (get_flag(V) == 0) {
+    if (regs.flags.V == 0) {
         regs.PC = regs.PC + imm;
-    }
-    else {
-        regs.PC += 2;
+        regs.flags.J = 1;
     }
 }
 
 void BVS(int8_t imm) {
-    if (get_flag(V) == 1) {
+    if (regs.flags.V == 1) {
         regs.PC = regs.PC + imm;
-    }
-    else {
-        regs.PC += 2;
+        regs.flags.J = 1;
     }
 }
 
 void BCC(int8_t imm) {
-    if (get_flag(C) == 0) {
+    if (regs.flags.C == 0) {
         regs.PC = regs.PC + imm;
-    }
-    else {
-        regs.PC += 2;
+        regs.flags.J = 1;
     }
 }
 
 void LDY(uint16_t imm) {
-    if (mode == IMMEDIATE) {
-        regs.Y = imm;
-        regs.PC += 2;
-    }
-    else if (mode == ZERO_PAGE) {
-        regs.Y = memory[imm];
-        regs.PC += 2;
-    }
-    else if (mode == ZERO_PAGE_X) {
-        regs.Y =  memory[(imm + regs.X) % 256];
-        regs.PC += 2;
-    }
-    else if (mode == ABSOLUTE) {
-        regs.Y = memory[imm];
-        regs.PC += 3;
-    }
-    else if (mode == ABSOLUTE_X) {
-        regs.Y = memory[imm + regs.X];
-        regs.PC += 3;
-    }
-    assign_flag(N, regs.Y < 0);
-    assign_flag(Z, regs.Y == 0);
+    regs.Y = imm;
+    regs.flags.N = regs.Y < 0;
+    regs.flags.Z = regs.Y == 0;
 }
 
 void BCS(int8_t imm) {
-    if (get_flag(C) == 1) {
+    if (regs.flags.C == 1) {
         regs.PC = regs.PC + imm;
-    }
-    else {
-        regs.PC += 2;
+        regs.flags.J = 1;
     }
 }
 
 void CPY(uint16_t imm) {
-    if (mode == IMMEDIATE) {
-        
-    }
+    
 }
 
 void BNE(int8_t imm) {
-    if (get_flag(Z) == 0) {
+    if (regs.flags.Z == 0) {
         regs.PC = regs.PC + imm;
-    }
-    else {
-        regs.PC += 2;
+        regs.flags.J = 1;
     }
 }
 
@@ -336,10 +272,8 @@ void CPX(uint16_t imm) {
 }
 
 void BEQ(int8_t imm) {
-    if (get_flag(Z) == 1) {
+    if (regs.flags.Z == 1) {
         regs.PC = regs.PC + imm;
-    }
-    else {
-        regs.PC += 2;
+        regs.flags.J = 1;
     }
 }
