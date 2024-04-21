@@ -2,6 +2,9 @@
 #include "system_vars.h"
 #include "execute.h"
 
+uint8_t memory[4096];
+Registers regs;
+
 int decode_and_execute(uint32_t ins)
 {
     AddressingMode mode = IMPLIED;
@@ -469,12 +472,4 @@ int address_to_immediate(uint16_t imm, AddressingMode mode)
         break;
     }
     return imm;
-}
-
-int main()
-{
-    init();
-    decode_and_execute(0);
-    printf("hello");
-    return 0;
 }

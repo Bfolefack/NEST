@@ -1,3 +1,6 @@
-#include "stdint.h"
+#ifndef LOADNES_H
+#define LOADNES_H
 
-extern int load_nes(char* filename);
+extern void load_nes(char* filename);
+
+#endif

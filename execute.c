@@ -213,10 +213,10 @@ void BCC(uint16_t imm) {
     }
 }
 
-void LDY(int8_t imm) {
-    regs.Y = imm;
-    regs.flags.N = imm < 1;
-    regs.flags.Z = imm == 0;
+void LDY(uint16_t imm) {
+    regs.Y = memory[imm];
+    regs.flags.N = (regs.Y >> 7) == 1;
+    regs.flags.Z = regs.Y == 0;
 }
 
 void BCS(uint16_t imm) {
@@ -227,7 +227,7 @@ void BCS(uint16_t imm) {
 }
 
 void CPY(uint16_t imm) {
-    regs.flags.N = regs.Y < memory[imm];
+    regs.flags.N = (regs.Y - memory[imm]) >> 7;
     regs.flags.Z = regs.Y == memory[imm];
     regs.flags.C = regs.Y >= memory[imm];
 }
@@ -313,7 +313,6 @@ void SBC(uint16_t imm) {
     regs.flags.V = ((result & 0x100) >> 7) == 1;
     regs.flags.N = (regs.A >> 7) == 1;
 }
-
 
 void ASL(uint16_t imm, bool accumulator) {
     if (accumulator) {
@@ -402,8 +401,7 @@ void DEC(uint16_t imm) {
 }
 
 void INC(uint16_t imm) {
-     memory[imm] = memory[imm] + 1;
+    memory[imm] = memory[imm] + 1;
     regs.flags.Z = (memory[imm] == 0);
     regs.flags.N = (memory[imm] >> 7);   
 }
-
