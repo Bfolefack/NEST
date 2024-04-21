@@ -5,9 +5,9 @@ typedef struct PPUCTRL {
     uint8_t H : 1; // Sprite Size
     uint8_t B : 1; // Background Pattern Table Address
     uint8_t S : 1; // Sprite Pattern Table Address
-    uint8_t I : 1;
+    uint8_t I : 1; // VRAM address increment
+    uint8_t N2 : 1;
     uint8_t N1 : 1;
-    uint8_t N0 : 1;
 } PPUCTRL;
 
 typedef struct PPUMASK {
@@ -28,6 +28,13 @@ typedef struct PPUSTATUS {
     uint8_t O : 1;
 
 } PPUSTATUS;
+
+typedef struct PPUADDR {
+    uint8_t lower8;
+    uint8_t higher8;
+    uint16_t fullAddr;
+    bool higherByte;
+} PPUADDR;
 
 typedef struct PPUREGS {
     PPUCTRL ppu_ctrl;
