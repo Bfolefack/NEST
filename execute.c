@@ -48,18 +48,14 @@ Flags byte_to_flags(uint8_t byte) {
     return flags;
 }
 
-void interrupt() {
-    // TO DO 
-    RTI();
-}
-
 void BRK() {
     regs.flags.I = 1;
     regs.flags.B = 1;
     push((regs.PC + 2) >> 8);
     push(regs.PC + 2);
     push(flags_to_byte(regs.flags));
-    interrupt();
+    regs.PC = memory[0xFFFE];
+    regs.PC |= memory[0xFFFF] << 8;
     regs.flags.J = 1;
 }
 
