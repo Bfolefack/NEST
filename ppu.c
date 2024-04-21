@@ -3,33 +3,15 @@
 #include "execute.h"
 
 PPUREGS ppu_regs;
+bool higher_byte = true;
 
-uint16_t ppuAddr;
-bool higherByte = true;
-uint8_t ppuCtrl = 0;
-
-
-void writeToPPUADDR(uint8_t data) {
-    if (higherByte) {
-        ppuAddr = (data << 8) + (ppuAddr & 0xFF);
-    }
-    else {
-        ppuAddr = (ppuAddr & 0xFF00) + data;
-    }
-    higherByte = !higherByte;
+void write_to_ppu_addr(uint8_t data) {
+    ppu_regs.ppu_addr = higher_byte ? 
+                        (((uint16_t) data) << 8) | (ppu_regs.ppu_addr & 0xFF) : 
+                        (ppu_regs.ppu_addr & 0xFF00) | data;
+    higher_byte = !higher_byte;
 }
 
-void incrementPPUADDR() {
-    uint8_t VRAMIncrement = (ppuCtrl >> 2) & 1;
-
-    if (VRAMIncrement) {
-        ppuAddr += 32;
-    }
-    else {
-        ppuAddr += 1;
-    }
-}
-
-void writeToPPUCTRL(uint8_t data) {
-    ppuCtrl = data;
+void increment_ppu_addr() {
+    ppu_regs.ppu_addr += (ppu_regs.ppu_ctrl & 0b100) ? 32 : 1;
 }
