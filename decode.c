@@ -208,10 +208,10 @@ int decode_and_execute(uint32_t ins)
             switch (hi / 2)
             {
             case 0x1:
-                // BIT(imm);
+                BIT(imm);
                 break;
             case 0x4:
-                // STY(imm);
+                STY(imm);
                 break;
             case 0x5:
                 LDY(imm);
@@ -286,28 +286,28 @@ int decode_and_execute(uint32_t ins)
             switch (hi / 2)
             {
             case 0x0:
-                // ORA(imm);
+                ORA(imm);
                 break;
             case 0x1:
-                // AND(imm);
+                AND(imm);
                 break;
             case 0x2:
-                // EOR(imm);
+                EOR(imm);
                 break;
             case 0x3:
-                // ADC(imm);
+                ADC(imm);
                 break;
             case 0x4:
-                // STA(imm);
+                STA(imm);
                 break;
             case 0x5:
-                // LDA(imm);
+                LDA(imm);
                 break;
             case 0x6:
-                // CMP(imm);
+                CMP(imm);
                 break;
             case 0x7:
-                // SBC(imm);
+                SBC(imm);
                 break;
             }
             break;
@@ -370,28 +370,28 @@ int decode_and_execute(uint32_t ins)
             switch (hi / 2)
             {
             case 0x0:
-                // ASL(imm);
+                ASL(imm, mode);
                 break;
             case 0x1:
-                // ROL(imm);
+                ROL(imm, mode);
                 break;
             case 0x2:
-                // LSR(imm);
+                LSR(imm, mode);
                 break;
             case 0x3:
-                // ROR(imm);
+                ROR(imm, mode);
                 break;
             case 0x4:
-                // STX(imm);
+                STX(imm);
                 break;
             case 0x5:
-                // LDX(imm);
+                LDX(imm);
                 break;
             case 0x6:
-                // DEC(imm);
+                DEC(imm);
                 break;
             case 0x7:
-                // INC(imm);
+                INC(imm);
                 break;
             }
             break;
