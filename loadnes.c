@@ -23,7 +23,7 @@ char* chr_rom;
 char* inst_rom;
 char* prom;
 
-int load_nes(char* filename) {
+void load_nes(char* filename) {
     FILE* file = fopen(filename, "r");
     if (file == NULL) {
         perror("Cannot read from file");
