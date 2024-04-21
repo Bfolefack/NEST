@@ -331,7 +331,7 @@ void ASL(uint16_t imm, bool accumulator) {
     }
 }
 
-void ROL(uint8_t imm, bool accumulator) {
+void ROL(uint16_t imm, bool accumulator) {
     uint8_t oldCarry = regs.flags.C;
     if (accumulator) {
         imm = (uint8_t)imm;
@@ -348,5 +348,62 @@ void ROL(uint8_t imm, bool accumulator) {
         regs.flags.Z = (memory[imm] == 0);
         regs.flags.N = (memory[imm] >> 7) == 1;
     }
+}
+
+void LSR(uint16_t imm, bool accumulator) {
+    if (accumulator) {
+        imm = (uint8_t)imm;
+        regs.A = imm >> 1;
+        regs.flags.C = (imm & 1);
+        regs.flags.Z = (regs.A == 0);
+        regs.flags.N = (regs.A >> 7) == 1;
+    }
+    else {
+        regs.flags.C = (memory[imm] & 1);
+        memory[imm] = memory[imm] >> 1;
+        regs.flags.Z = (memory[imm] == 0);
+        regs.flags.N = (memory[imm] >> 7) == 1;
+    }
+}
+
+void ROR(uint16_t imm, bool accumulator) {
+   uint8_t oldCarry = regs.flags.C;
+   if (accumulator) {
+       imm = (uint8_t)imm;
+       regs.A = imm >> 1;
+       regs.A = (regs.A + (oldCarry << 7));
+       regs.flags.C = (imm & 1);
+       regs.flags.Z = (regs.A == 0);
+       regs.flags.N = (regs.A >> 7) == 1;
+   }
+   else {
+       regs.flags.C = (memory[imm] & 1);
+       memory[imm] = memory[imm] >> 1;
+       memory[imm] = memory[imm] + (oldCarry << 7);
+       regs.flags.Z = (memory[imm] == 0);
+       regs.flags.N = (memory[imm] >> 7) == 1;
+   }
+}
+
+void STX(uint16_t imm) {
+    memory[imm] = regs.X;
+}
+
+void LDX(uint16_t imm) {
+    regs.X = memory[imm];
+    regs.flags.Z = (regs.X == 0);
+    regs.flags.N = (regs.X >> 7);
+}
+
+void DEC(uint16_t imm) {
+    memory[imm] = memory[imm] - 1;
+    regs.flags.Z = (memory[imm] == 0);
+    regs.flags.N = (memory[imm] >> 7);
+}
+
+void INC(uint16_t imm) {
+     memory[imm] = memory[imm] + 1;
+    regs.flags.Z = (memory[imm] == 0);
+    regs.flags.N = (memory[imm] >> 7);   
 }
 
