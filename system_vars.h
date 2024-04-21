@@ -41,7 +41,11 @@ typedef enum AddressingMode {
     RELATIVE
 } AddressingMode;
 
-extern uint8_t memory[4000];
+typedef enum Mirror_Type {
+    HORIZONTAL, VERTICAL
+} Mirror_Type;
+
+extern uint8_t memory[4096];
 extern Registers regs;
 
 extern uint32_t prg_rom_size;
@@ -51,5 +55,7 @@ extern char* prg_rom;
 extern char* chr_rom;
 extern char* inst_rom;
 extern char* prom;
+
+extern Mirror_Type mirroring;
 
 #endif

@@ -1,6 +1,9 @@
 #include "loadnes.h"
-#include "stdio.h"
-#include "stdbool.h"
+#include "system_vars.h"
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdint.h>
 
 #define byte char
 
@@ -22,6 +25,8 @@ char* prg_rom;
 char* chr_rom;
 char* inst_rom;
 char* prom;
+
+Mirror_Type mirroring;
 
 void load_nes(char* filename) {
     FILE* file = fopen(filename, "r");
@@ -64,7 +69,7 @@ void load_nes(char* filename) {
         chr_rom = NULL;
     }
 
-    if (flags_7 & 0b100) { 
+    if (flags_7 & 0b10) { 
         // file contains INST-ROM
         inst_rom = malloc(8192 * sizeof(byte));
         fread(inst_rom, sizeof(byte), 8192, file);
@@ -78,8 +83,14 @@ void load_nes(char* filename) {
         inst_rom = NULL;
     }
 
-    if (fgetc != EOF) {
+    if (fgetc(file) != EOF) {
         perror("Unknown extra content");
         exit(-2);
+    }
+
+    if (flags_6 & 0b1) {
+        mirroring = HORIZONTAL;
+    } else {
+        mirroring = VERTICAL;
     }
 }
