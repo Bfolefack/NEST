@@ -15,6 +15,10 @@ int main (int argc, char** argv, char** envp) {
     init();
 
     while (1) {
-        regs.PC += decode_and_execute(prg_rom[regs.PC]);
+        int pc_increment = decode_and_execute(prg_rom[regs.PC]);
+        if (!regs.flags.J) {
+            regs.PC += pc_increment;
+            regs.flags.J = 0;
+        }
     }
 }
