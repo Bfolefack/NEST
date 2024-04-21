@@ -48,13 +48,11 @@ typedef enum Mirror_Type {
 extern uint8_t memory[4096];
 extern Registers regs;
 
-extern uint32_t prg_rom_size;
-extern uint32_t chr_rom_size;
-extern char* trainer;
-extern char* prg_rom;
-extern char* chr_rom;
-extern char* inst_rom;
-extern char* prom;
+extern uint8_t trainer[0x200];
+extern uint8_t prg_rom[0x8000];
+extern uint8_t chr_rom[0x2000];
+extern uint8_t inst_rom[0x2000];
+extern uint8_t prom[0x20];
 
 extern Mirror_Type mirroring;
 

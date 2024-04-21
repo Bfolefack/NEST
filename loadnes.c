@@ -5,26 +5,24 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#define byte char
-
-byte* name;
-byte flags_6;
-byte flags_7;
-byte flags_8;
-byte flags_9;
-byte flags_10;
-byte* padding;
+char* name;
+uint8_t flags_6;
+uint8_t flags_7;
+uint8_t flags_8;
+uint8_t flags_9;
+uint8_t flags_10;
+char* padding;
 
 bool uses_chr_ram;
 
 uint32_t prg_rom_size;
 uint32_t chr_rom_size;
 
-char* trainer;
-char* prg_rom;
-char* chr_rom;
-char* inst_rom;
-char* prom;
+uint8_t trainer[0x200];
+uint8_t prg_rom[0x8000];
+uint8_t chr_rom[0x2000];
+uint8_t inst_rom[0x2000];
+uint8_t prom[0x20];
 
 Mirror_Type mirroring;
 
@@ -35,8 +33,8 @@ void load_nes(char* filename) {
         exit(-1);
     }
 
-    name = (byte*) malloc(4 * sizeof(byte));
-    fread(name, sizeof(byte), 4, file);
+    name = (uint8_t*) malloc(4 * sizeof(uint8_t));
+    fread(name, sizeof(uint8_t), 4, file);
 
     prg_rom_size = 16384 * (uint8_t) fgetc(file);
 
@@ -48,39 +46,23 @@ void load_nes(char* filename) {
     flags_9 = fgetc(file);
     flags_10 = fgetc(file);
 
-    padding = (byte*) malloc(5 * sizeof(byte));
-    fread(padding, sizeof(byte), 5, file);
+    padding = (uint8_t*) malloc(5 * sizeof(uint8_t));
+    fread(padding, sizeof(uint8_t), 5, file);
 
-    if (flags_6 & 0b10) { 
-        // file contains trainer
-        trainer = malloc(512 * sizeof(byte));
-        fread(trainer, sizeof(byte), 512, file);
-    } else {
-        trainer = NULL;
+    if (flags_6 & 0b10) { // file contains trainer
+        fread(trainer, sizeof(uint8_t), 0x200, file);
     }
 
-    prg_rom = malloc(prg_rom_size * sizeof(byte));
-    fread(prg_rom, sizeof(byte), prg_rom_size, file);
+    fread(prg_rom, sizeof(uint8_t), prg_rom_size, file);
 
     if (chr_rom_size > 0) {
-        chr_rom = malloc(chr_rom_size * sizeof(byte));
-        fread(chr_rom, sizeof(byte), chr_rom_size, file);
-    } else {
-        chr_rom = NULL;
+        fread(chr_rom, sizeof(uint8_t), chr_rom_size, file);
     }
 
     if (flags_7 & 0b10) { 
         // file contains INST-ROM
-        inst_rom = malloc(8192 * sizeof(byte));
-        fread(inst_rom, sizeof(byte), 8192, file);
-        prom = malloc(32 * sizeof(byte));
-        if (fread(prom, sizeof(byte), 32, file) < 32) {
-            // PROM section is often omitted
-            free(prom);
-            prom = NULL;
-        }
-    } else {
-        inst_rom = NULL;
+        fread(inst_rom, sizeof(uint8_t), 0x2000, file);
+        fread(prom, sizeof(uint8_t), 0x20, file); // often omitted
     }
 
     if (fgetc(file) != EOF) {
