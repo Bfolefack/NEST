@@ -84,7 +84,7 @@ void load_nes(char* filename) {
     }
 
     if (fgetc(file) != EOF) {
-        perror("Unknown extra content");
+        perror("Unknown extra content in file");
         exit(-2);
     }
 
