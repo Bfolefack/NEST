@@ -213,10 +213,10 @@ void BCC(uint16_t imm) {
     }
 }
 
-void LDY(uint16_t imm) {
-    regs.Y = memory[imm];
-    regs.flags.N = regs.Y >> 7;
-    regs.flags.Z = regs.Y == 0;
+void LDY(int8_t imm) {
+    regs.Y = imm;
+    regs.flags.N = imm < 1;
+    regs.flags.Z = imm == 0;
 }
 
 void BCS(uint16_t imm) {
