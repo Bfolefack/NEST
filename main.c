@@ -16,9 +16,9 @@ int main (int argc, char** argv, char** envp) {
 
     while (1) {
         uint32_t ins = (((uint32_t) prg_rom[regs.PC]) << 24)
-                     | (((uint32_t) prg_rom[regs.PC]) << 16)
-                     | (((uint32_t) prg_rom[regs.PC]) << 8)
-                     | (((uint32_t) prg_rom[regs.PC]));
+                     | (((uint32_t) prg_rom[regs.PC + 1]) << 16)
+                     | (((uint32_t) prg_rom[regs.PC + 2]) << 8)
+                     | (((uint32_t) prg_rom[regs.PC + 3]));
 
         uint32_t pc_increment = decode_and_execute(ins);
         if (!regs.flags.J) {
