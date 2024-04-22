@@ -8,7 +8,7 @@ void init() {
     regs.A = 0;
     regs.X = 0;
     regs.Y = 0;
-    regs.PC = 0xFFFC;
+    regs.PC = memory[0xFFFC] | (memory[0xFFFD] << 8);
     regs.S = 0xFF; // Relative address
     regs.flags.C = 0;
     regs.flags.Z = 0;
