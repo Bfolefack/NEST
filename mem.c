@@ -1,7 +1,8 @@
 #include "mem.h"
-#include "stdint.h"
 #include "ppu.h"
 #include "system_vars.h"
+#include "stdint.h"
+#include "stdbool.h"
 
 uint8_t read(uint16_t address) {
     if (address < 0x2000) {
@@ -22,8 +23,8 @@ uint8_t read(uint16_t address) {
                 perror("Cannot read from write-only register");
                 exit(2);
             case 2:
+                ppu_internals.w = false;
                 return ppu_regs.ppu_status;
-                // TODO - clear write latch (PPU internal register)
             case 4:
                 return ppu_regs.oam_data;
             case 7:
@@ -32,7 +33,8 @@ uint8_t read(uint16_t address) {
         }
     } else if (address < 0x401F) {
         if (address == 0x4014) {
-            return ppu_regs.oam_dma;
+            perror("Cannot read from write-only register");
+            exit(2);
         } else {
             return 0; // TODO - APU and I/O registers
         }
@@ -66,21 +68,31 @@ void write(uint16_t address, uint8_t data) {
                 return;
             case 4:
                 ppu_regs.oam_data = data;
-                return; // TODO - increment oam_addr (by how much?)
+                ppu_regs.oam_addr++;
+                return;
             case 5:
-                ppu_regs.ppu_scroll = data;
-                return; // TODO - make scroll behave like addr (toggle w; 16 bits)
+                ppu_regs.ppu_scroll = ppu_internals.w ? 
+                        (ppu_regs.ppu_addr & 0xFF00) | data :
+                        (((uint16_t) data) << 8) | (ppu_regs.ppu_addr & 0xFF);
+                ppu_internals.w = !ppu_internals.w;
+                return;
             case 6:
-                write_to_ppu_addr(data);
+                ppu_regs.data = ppu_internals.w ? 
+                        (ppu_regs.ppu_data & 0xFF00) | data :
+                        (((uint16_t) data) << 8) | (ppu_regs.ppu_data & 0xFF);
+                ppu_internals.w = !ppu_internals.w;
                 return;
             case 7:
-                increment_ppu_addr();
                 ppu_regs.ppu_data = data;
+                increment_ppu_addr();
                 return;
         }
     } else if (address < 0x401F) {
         if (address == 0x4014) {
-            return; // TODO - map 256 bytes from CPU to internal PPU OAM
+            for (uint16_t i = 0; i < 0x100; i++) {
+                oam_data[i] = memory[0x100 * data + i];
+            }
+            return;
         } else {
             return; // TODO - APU and I/O registers
         }
