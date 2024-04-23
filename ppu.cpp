@@ -72,15 +72,15 @@ uint8_t ppu_read(uint16_t addr) {
     if (0 <= addr && addr <= 0x1FFF) {
         return chr_rom[addr];
         // read from CHR ROM
-    }
-    else if(0x2000 <= addr && addr <= 0x2FFF) {
+    } else if(0x2000 <= addr && addr <= 0x2FFF) {
         return vram[mirror_vram_addr(addr)];
         // read from VRAM
-    }
-    else if (0x3F00 <= addr && addr <= 0x3FFF) {
+    } else if (0x3F00 <= addr && addr <= 0x3FFF) {
         return palette_table[addr % 0x20];
 
         // read from palette table
+    } else {
+        return 0; // unreachable
     }
 }
 

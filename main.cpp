@@ -20,12 +20,12 @@ int main (int argc, char** argv, char** envp) {
     CPU cpu = CPU();
 
     while (1) {
-        ppu_cycle(1);
-        ppu_cycle(1);
-        ppu_cycle(1);
+        ppu_cycle();
+        ppu_cycle();
+        ppu_cycle();
         cpu.clock();
         cycle_number++;
-        if (cycle_number % 0x1000 == 0x0) {
+        if (cycle_number % 0x100000 == 0x0) {
             test();
         }
     }

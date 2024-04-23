@@ -66,8 +66,8 @@ void CPU::clock() {
         opcode = read(regs.PC); // First byte of instruction
         //Print pc and opcode
         // if(regs.PC >> 8 == 0xE0 || regs.PC >> 8 == 0xE4){
-            printf("\nOpcode: %02X\n", opcode);
-            print_regs();
+            // printf("\nOpcode: %02X\n", opcode);
+            // print_regs();
         // }
         regs.PC++;
 
@@ -92,7 +92,7 @@ void CPU::reset() {
     regs.Y = 0;
     uint8_t lo = read(PC_START);
     uint8_t hi = read(PC_START + 1);
-    regs.PC = (hi << 8) | lo;
+    regs.PC = (((uint16_t) hi) << 8) | lo;
     regs.SP = SP_START; 
 
     // Flags
@@ -127,7 +127,7 @@ void CPU::interruptRequest() {
     // Load IRQ vector
     uint8_t lo = read(IRQ_ADDR);
     uint8_t hi = read(IRQ_ADDR + 1);
-    regs.PC = (hi << 8) | lo;
+    regs.PC = (((uint16_t) hi) << 8) | lo;
 
     cycles = IRQ_CYCLES;
 }
@@ -143,7 +143,7 @@ void CPU::nonmaskableInterrupt() {
     // Load IRQ vector
     uint8_t lo = read(NMI_ADDR);
     uint8_t hi = read(NMI_ADDR + 1);
-    regs.PC = (hi << 8) | lo;
+    regs.PC = (((uint16_t) hi) << 8) | lo;
 
     cycles = NMI_CYCLES;
 }
@@ -201,7 +201,7 @@ bool CPU::ABS() {
     regs.PC++;
     uint8_t hi = read(regs.PC);
     regs.PC++;
-    absolute_addr = (hi << 8) | lo;
+    absolute_addr = (((uint16_t) hi) << 8) | lo;
     data = read(absolute_addr);
     return 0;
 }
@@ -211,7 +211,7 @@ bool CPU::ABX() {
     regs.PC++;
     uint8_t hi = read(regs.PC);
     regs.PC++;
-    absolute_addr = ((hi << 8) | lo) + regs.X;
+    absolute_addr = ((((uint16_t) hi) << 8) | lo) + regs.X;
     data = read(absolute_addr);
 
     if ((absolute_addr >> 8) != hi) {
@@ -228,7 +228,7 @@ bool CPU::ABY() {
     regs.PC++;
     uint8_t hi = read(regs.PC);
     regs.PC++;
-    absolute_addr = ((hi << 8) | lo) + regs.Y;
+    absolute_addr = ((((uint16_t) hi) << 8) | lo) + regs.Y;
     data = read(absolute_addr);
 
     if ((absolute_addr >> 8) != hi) {
@@ -245,14 +245,14 @@ bool CPU::IND() {
     regs.PC++;
     uint8_t hi = read(regs.PC);
     regs.PC++;
-    uint16_t addr = ((hi << 8) | lo);
+    uint16_t addr = ((((uint16_t) hi) << 8) | lo);
 
     if (lo == 0x00FF) {
         // NES page boundary bug
-        absolute_addr = (read(addr & 0xFF00) << 8) | read(addr);
+        absolute_addr = (((uint16_t) read(addr & 0xFF00)) << 8) | read(addr);
     }
     else {
-        absolute_addr = (read(addr + 1) << 8) | read(addr);
+        absolute_addr = (((uint16_t) read(addr + 1)) << 8) | read(addr);
     }
     data = read(absolute_addr);
     return 0;
@@ -263,7 +263,7 @@ bool CPU::IDX() {
     regs.PC++;
     uint8_t lo = read(addr + regs.X);
     uint8_t hi = read(addr + regs.X + 1);
-    absolute_addr = (hi << 8) | lo;
+    absolute_addr = (((uint16_t) hi) << 8) | lo;
     data = read(absolute_addr);
     return 0;
 }
@@ -273,7 +273,7 @@ bool CPU::IDY() {
     regs.PC++;
     uint8_t lo = read(addr);
     uint8_t hi = read(addr + 1);
-    absolute_addr = ((hi << 8) | lo) + regs.Y;
+    absolute_addr = ((((uint16_t) hi) << 8) | lo) + regs.Y;
     data = read(absolute_addr);
 
     if ((absolute_addr >> 8) != hi) {
@@ -424,7 +424,7 @@ bool CPU::BRK() {
     // Load IRQ vector
     uint8_t lo = read(IRQ_ADDR);
     uint8_t hi = read(IRQ_ADDR + 1);
-    regs.PC = (hi << 8) | lo;
+    regs.PC = (((uint16_t) hi) << 8) | lo;
 
     return 0;
 }
@@ -665,12 +665,12 @@ bool CPU::ROR() {
 
 bool CPU::RTI() {
     pullFlags();
-    regs.PC = pull() | (pull() << 8);
+    regs.PC = pull() | (((uint16_t) pull()) << 8);
     return 0;
 }
 
 bool CPU::RTS() {
-    regs.PC = pull() | (pull() << 8);
+    regs.PC = pull() | (((uint16_t) pull()) << 8);
     regs.PC++;
     return 0;
 }

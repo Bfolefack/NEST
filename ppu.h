@@ -30,6 +30,6 @@ extern uint8_t palette_table[32];
 extern uint8_t vram[2048];
 extern uint8_t oam_data[256];
 
-extern bool ppu_cycle(uint8_t cycles);
-uint8_t ppu_read(uint16_t addr);
+extern void ppu_cycle();
+extern uint8_t ppu_read(uint16_t addr);
 
