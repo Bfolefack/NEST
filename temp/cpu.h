@@ -74,12 +74,11 @@ public:
     bool TXS();	bool TYA();
     bool XXX(); // Illegal
 
-    // Events
     void clock();
-    void reset();
 
     // Interrupts
-    void requestInterrupt();
+    void reset();
+    void interruptRequest();
     void nonmaskableInterrupt();
 
     // Instruction information
@@ -90,12 +89,20 @@ public:
     uint8_t cycles = 0;
 
 private:
+    const uint16_t STACK_BASE = 0x0100;
+    const uint16_t PC_START = 0xFFFC;
+    const uint16_t SP_START = 0xFF;
+    const uint16_t IRQ_ADDR = 0xFFFE;
+    const uint16_t NMI_ADDR = 0xFFFA;
+    const int RESET_CYCLES = 8;
+    const int IRQ_CYCLES = 7;
+    const int NMI_CYCLES = 8;
+
     // Temp (use bus)
     uint8_t read(uint16_t addr);
     void write(uint16_t addr, uint8_t data);
 
     // Stack
-    const uint16_t STACK_BASE = 0x0100;
     uint8_t pull();
     void push(uint8_t value);
     void pullFlags();
