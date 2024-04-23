@@ -1,5 +1,5 @@
 compile:
-	gcc -g *.c -o nest
+	g++ -g *.cpp -o nest
 
 debug:
 	gdb nest $(file)

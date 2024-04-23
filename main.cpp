@@ -7,6 +7,7 @@
 #include "test.h"
 
 uint64_t cycle_number;
+CPU cpu;
 
 int main (int argc, char** argv, char** envp) {
     if (argc < 2) {

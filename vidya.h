@@ -1,9 +1,9 @@
 #pragma once
 
 
-// #include "SDL_image/SDL_image.h"
+// #include "src/include/SDL2/SDL_image.h"
 #include <stdio.h>
-#include <SDL2/SDL.h>
+#include "src/include/SDL2/SDL.h"
 
 const int SCREEN_WIDTH = 256;
 const int SCREEN_HEIGHT = 240;

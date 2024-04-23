@@ -3,9 +3,13 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "cpu.h"
+
 typedef enum Mirror_Type {
     HORIZONTAL, VERTICAL
 } Mirror_Type;
+
+extern CPU cpu;
 
 extern uint8_t memory[0x800];
 extern uint8_t prg_ram[0x2000];
