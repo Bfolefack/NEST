@@ -1,8 +1,11 @@
 #include "mem.h"
 #include "ppu.h"
 #include "system_vars.h"
-#include "stdint.h"
-#include "stdbool.h"
+
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 uint8_t memory [4096];
 
