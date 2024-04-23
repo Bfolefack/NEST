@@ -12,7 +12,6 @@ uint8_t data_buffer = 0;
 using Color = std::tuple<uint8_t, uint8_t, uint8_t>;
 uint16_t ppuCycles = 0;
 uint16_t scanline = 0;
-bool vblank = false;
 
 // source: https://bugzmanov.github.io/nes_ebook/chapter_6_3.html
 const std::array<Color, 64> SYSTEM_PALETTE = {
@@ -90,14 +89,6 @@ uint8_t vblank() {
     return ppu_regs.ppu_status >> 7;
 }
 
-void write_to_ctrl(uint8_t value) {
-    uint8_t before_status = vblank_nmi();
-    ppu_regs.ppu_ctrl = value;
-    if (!before_status && vblank_nmi() && vblank()) {
-        // generate NMI
-    }
-}
-
 bool ppu_cycle(uint8_t cycles) {
     ppuCycles += cycles;
     if (ppuCycles >= 341) {
@@ -121,6 +112,6 @@ bool ppu_cycle(uint8_t cycles) {
     return false;
 }
 
-void render() {
-    
+void render_pixel() {
+
 }
