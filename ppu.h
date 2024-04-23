@@ -17,9 +17,10 @@ typedef struct PPU_INTERNAL_REGS {
     uint8_t t;
     uint8_t x;
     bool w;
-}
+} PPU_INTERNAL_REGS;
 
 extern PPU_EXTERNAL_REGS ppu_regs;
+extern PPU_INTERNAL_REGS ppu_internals;
 extern uint8_t data_buffer;
 extern uint8_t palette_table[32];
 extern uint8_t vram[2048];

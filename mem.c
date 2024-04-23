@@ -38,6 +38,11 @@ uint8_t read(uint16_t address) {
         } else {
             return 0; // TODO - APU and I/O registers
         }
+    } else if (address >= 0x8000) {
+        if (prg_rom_size < 0x8000) {
+            address = address % 0x4000;
+        } 
+        return prg_rom[address % 0x8000];
     } else {
         return 0; // some mappers may use this space
     }
@@ -56,7 +61,7 @@ void write(uint16_t address, uint8_t data) {
         switch (address) {
             case 2:
                 perror("Cannot write to read-only register");
-                exit(2);
+                exit(3);
             case 0: 
                 ppu_regs.ppu_ctrl = data;
                 return; // TODO : emulate PPU power-up state?
@@ -77,7 +82,7 @@ void write(uint16_t address, uint8_t data) {
                 ppu_internals.w = !ppu_internals.w;
                 return;
             case 6:
-                ppu_regs.data = ppu_internals.w ? 
+                ppu_regs.ppu_data = ppu_internals.w ? 
                         (ppu_regs.ppu_data & 0xFF00) | data :
                         (((uint16_t) data) << 8) | (ppu_regs.ppu_data & 0xFF);
                 ppu_internals.w = !ppu_internals.w;
