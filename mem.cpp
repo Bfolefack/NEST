@@ -83,8 +83,8 @@ void write(uint16_t address, uint8_t data) {
             case 0: 
                 temp = ppu_regs.ppu_ctrl;
                 ppu_regs.ppu_ctrl = data;
-                uint8_t nametable = ppu_regs.ppu_ctrl & 0b00000011;
-                ppu_internals.t = (ppu_internals.t & (0b1111001111111111 | (nametable << 10)));
+                uint16_t nametable = ppu_regs.ppu_ctrl & 0b00000011;
+                ppu_internals.t = (ppu_internals.t & 0b1111001111111111) | (nametable << 10);
                 if (!(temp >> 7) && ppu_regs.ppu_ctrl >> 7 && ppu_regs.ppu_status >> 7) {
                     cpu.nonmaskableInterrupt();
                 }
