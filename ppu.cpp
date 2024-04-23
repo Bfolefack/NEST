@@ -8,7 +8,6 @@ PPU_INTERNAL_REGS ppu_internals;
 uint8_t palette_table[32];
 uint8_t vram[2048];
 uint8_t oam_data[256];
-uint8_t data_buffer = 0;
 using Color = std::tuple<uint8_t, uint8_t, uint8_t>;
 uint16_t ppuCycles = 0;
 uint16_t scanline = 0;
@@ -33,22 +32,6 @@ const std::array<Color, 64> SYSTEM_PALETTE = {
     Color(0x99, 0xFF, 0xFC), Color(0xDD, 0xDD, 0xDD), Color(0x11, 0x11, 0x11), Color(0x11, 0x11, 0x11)
 };
 
-
-void ppu_write(uint16_t addr, uint8_t data) {
-    if (0 <= addr && addr <= 0x1FFF) {
-        // can't happen
-    }
-    else if(0x2000 <= addr && addr <= 0x2FFF) {
-        vram[mirror_vram_addr(addr)] = data;
-        // write VRAM
-    }
-    else if (0x3F00 <= addr && addr <= 0x3FFF) {
-        palette_table[addr % 0x20] = data;
-
-        // read from palette table
-    }
-}
-
 uint16_t mirror_vram_addr(uint16_t addr) {
     if (mirroring == HORIZONTAL) {
         if (addr >= 0x2400 && addr < 0x2800) {
@@ -67,6 +50,21 @@ uint16_t mirror_vram_addr(uint16_t addr) {
             return addr - 0x2800;
         }
         return addr - 0x2800;
+    }
+}
+
+void ppu_write(uint16_t addr, uint8_t data) {
+    if (0 <= addr && addr <= 0x1FFF) {
+        // can't happen
+    }
+    else if(0x2000 <= addr && addr <= 0x2FFF) {
+        vram[mirror_vram_addr(addr)] = data;
+        // write VRAM
+    }
+    else if (0x3F00 <= addr && addr <= 0x3FFF) {
+        palette_table[addr % 0x20] = data;
+
+        // read from palette table
     }
 }
 
