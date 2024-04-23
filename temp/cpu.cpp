@@ -69,6 +69,71 @@ void CPU::clock() {
     cycles--;
 }
 
+/********** Interrupts **********/
+
+void CPU::reset() {
+    // Registers
+    regs.A = 0;
+    regs.X = 0;
+    regs.Y = 0;
+    uint8_t lo = read(PC_START);
+    uint8_t hi = read(PC_START + 1);
+    regs.PC = (hi << 8) | lo;
+    regs.SP = SP_START; 
+
+    // Flags
+    regs.flags.C = 0;
+    regs.flags.Z = 0;
+    regs.flags.I = 1;
+    regs.flags.D = 0;
+    regs.flags.B = 0;
+    regs.flags.X = 0;
+    regs.flags.V = 0;
+    regs.flags.N = 0;
+
+    // Data
+    absolute_addr = 0;
+    relative_addr = 0;
+    data = 0;
+    cycles = RESET_CYCLES; 
+}
+
+void CPU::interruptRequest() {
+    if (regs.flags.I == 1) {
+        return;
+    }
+    
+    // Push PC and flags
+    push(regs.PC >> 8);
+    push(regs.PC);
+    regs.flags.B = 0;
+    regs.flags.I = 1;
+    pushFlags();
+
+    // Load IRQ vector
+    uint8_t lo = read(IRQ_ADDR);
+    uint8_t hi = read(IRQ_ADDR + 1);
+    regs.PC = (hi << 8) | lo;
+
+    cycles = IRQ_CYCLES;
+}
+
+void CPU::nonmaskableInterrupt() {
+    // Push PC and flags
+    push(regs.PC >> 8);
+    push(regs.PC);
+    regs.flags.B = 0;
+    regs.flags.I = 1;
+    pushFlags();
+
+    // Load IRQ vector
+    uint8_t lo = read(NMI_ADDR);
+    uint8_t hi = read(NMI_ADDR + 1);
+    regs.PC = (hi << 8) | lo;
+
+    cycles = NMI_CYCLES;
+}
+
 
 /********** Addressing modes **********/
 
@@ -333,7 +398,21 @@ bool CPU::BPL() {
 }
 
 bool CPU::BRK() {
+    regs.PC++;
 
+    // Push PC and flags
+    push(regs.PC >> 8);
+    push(regs.PC);
+    regs.flags.B = 1;
+    regs.flags.I = 1;
+    pushFlags();
+
+    // Load IRQ vector
+    uint8_t lo = read(IRQ_ADDR);
+    uint8_t hi = read(IRQ_ADDR + 1);
+    regs.PC = (hi << 8) | lo;
+
+    return 0;
 }
 
 bool CPU::BVC() {
@@ -571,7 +650,9 @@ bool CPU::ROR() {
 }
 
 bool CPU::RTI() {
-    
+    pullFlags();
+    regs.PC = pull() | (pull() << 8);
+    return 0;
 }
 
 bool CPU::RTS() {
