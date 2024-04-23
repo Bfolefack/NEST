@@ -10,7 +10,7 @@ uint8_t vram[2048];
 uint8_t oam_data[256];
 using Color = std::tuple<uint8_t, uint8_t, uint8_t>;
 uint16_t ppuCycles = 0;
-uint16_t scanline = 0;
+int16_t scanline = 0;
 
 // source: https://bugzmanov.github.io/nes_ebook/chapter_6_3.html
 const std::array<Color, 64> SYSTEM_PALETTE = {
@@ -92,27 +92,27 @@ uint8_t vblank() {
     return ppu_regs.ppu_status >> 7;
 }
 
-bool ppu_cycle(uint8_t cycles) {
-    ppuCycles += cycles;
-    if (ppuCycles >= 341) {
-        ppuCycles -= 341;
-        scanline += 1;
-    }
+void ppu_cycle() {
+    if (scanline >= -1 && ppuCycles == 1) {
+        if (scanline == -1 && ppuCycles == 1) {
 
-    if (scanline == 241) {
-        if (vblank_nmi()) {
-            ppu_regs.ppu_status = ppu_regs.ppu_status | 0b10000000;
-            cpu.nonmaskableInterrupt();
+        }
+
+        if ((ppuCycles >= 2 && ppuCycles < 258) || (ppuCycles >= 321 && ppuCycles < 338)) {
+
+        }
+
+        if (ppuCycles == 256) {
+
+        }
+
+        if (scanline == 241 && ppuCycles == 1) {
+            if (vblank_nmi()) {
+                ppu_regs.ppu_status = ppu_regs.ppu_status | 0b10000000;
+                cpu.nonmaskableInterrupt();
+            }
         }
     }
-
-    if (scanline >= 262) {
-        scanline = 0;
-        ppu_regs.ppu_status = ppu_regs.ppu_status & 0b01111111;
-        return true;
-    }
-
-    return false;
 }
 
 void render_pixel() {
