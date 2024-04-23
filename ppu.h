@@ -13,10 +13,14 @@ typedef struct PPU_EXTERNAL_REGS {
 } PPU_EXTERNAL_REGS;
 
 typedef struct PPU_INTERNAL_REGS {
-    uint8_t v;
-    uint8_t t;
-    uint8_t x;
-    bool w;
+    // bits 14-12: fine y scroll
+    // bits 11-10: nametable select
+    // bits 9-5: coarse Y scroll
+    // bits 4-0: coarse X scroll
+    uint16_t v; 
+    uint16_t t;
+    uint8_t x; // fine x scroll: 3 bits
+    bool w; // 1 bit
 } PPU_INTERNAL_REGS;
 
 extern PPU_EXTERNAL_REGS ppu_regs;
@@ -26,6 +30,6 @@ extern uint8_t palette_table[32];
 extern uint8_t vram[2048];
 extern uint8_t oam_data[256];
 
-extern void increment_ppu_addr();
 extern bool ppu_cycle(uint8_t cycles);
+uint8_t ppu_read(uint16_t addr);
 

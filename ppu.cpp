@@ -33,8 +33,20 @@ const std::array<Color, 64> SYSTEM_PALETTE = {
     Color(0x99, 0xFF, 0xFC), Color(0xDD, 0xDD, 0xDD), Color(0x11, 0x11, 0x11), Color(0x11, 0x11, 0x11)
 };
 
-void increment_ppu_addr() {
-    ppu_regs.ppu_addr += (ppu_regs.ppu_ctrl & 0b100) ? 32 : 1;
+
+void ppu_write(uint16_t addr, uint8_t data) {
+    if (0 <= addr && addr <= 0x1FFF) {
+        // can't happen
+    }
+    else if(0x2000 <= addr && addr <= 0x2FFF) {
+        vram[mirror_vram_addr(addr)] = data;
+        // write VRAM
+    }
+    else if (0x3F00 <= addr && addr <= 0x3FFF) {
+        palette_table[addr % 0x20] = data;
+
+        // read from palette table
+    }
 }
 
 uint16_t mirror_vram_addr(uint16_t addr) {
@@ -58,27 +70,20 @@ uint16_t mirror_vram_addr(uint16_t addr) {
     }
 }
 
-uint8_t read_ppu() {
-    uint16_t addr = ppu_regs.ppu_addr;
-    increment_ppu_addr();
-    uint8_t result = 0;
-
+uint8_t ppu_read(uint16_t addr) {
     if (0 <= addr && addr <= 0x1FFF) {
-        result = data_buffer;
-        data_buffer = chr_rom[addr];
+        return chr_rom[addr];
         // read from CHR ROM
     }
     else if(0x2000 <= addr && addr <= 0x2FFF) {
-        result = data_buffer;
-        data_buffer = vram[mirror_vram_addr(addr)];
+        return vram[mirror_vram_addr(addr)];
         // read from VRAM
     }
     else if (0x3F00 <= addr && addr <= 0x3FFF) {
-        result = palette_table[addr % 0x20];
+        return palette_table[addr % 0x20];
 
         // read from palette table
     }
-    return result;
 }
 
 uint8_t vblank_nmi() {

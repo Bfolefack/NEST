@@ -9,6 +9,7 @@
 
 uint8_t memory [0x800];
 uint8_t prg_ram[0x2000];
+uint8_t data_buffer;
 
 uint8_t read(uint16_t address) {
     if (address < 0x2000) {
@@ -35,8 +36,14 @@ uint8_t read(uint16_t address) {
             case 4:
                 return ppu_regs.oam_data;
             case 7:
-                increment_ppu_addr();
-                return ppu_regs.ppu_data;
+                uint8_t data = data_buffer;
+                data_buffer = ppu_read(ppu_internals.v);
+                if (ppu_internals.v >= 0x3F00) {
+                    data = data_buffer;
+                }
+            
+                ppu_internals.v += (ppu_regs.ppu_ctrl & 0b100) ? 32 : 1;
+                return data;
         }
     } else if (address < 0x401F) {
         if (address == 0x4014) {
@@ -74,6 +81,8 @@ void write(uint16_t address, uint8_t data) {
             case 0: 
                 uint8_t before_status = ppu_regs.ppu_ctrl >> 7;
                 ppu_regs.ppu_ctrl = data;
+                uint8_t nametable = ppu_regs.ppu_ctrl & 0b00000011;
+                ppu_internals.t = (ppu_internals.t & (0b1111001111111111 | (nametable << 10)));
                 if (!before_status && ppu_regs.ppu_ctrl >> 7 && ppu_regs.ppu_status >> 7) {
                     cpu.nonmaskableInterrupt();
                 }
@@ -89,20 +98,32 @@ void write(uint16_t address, uint8_t data) {
                 ppu_regs.oam_addr++;
                 return;
             case 5:
-                ppu_regs.ppu_scroll = ppu_internals.w ? 
-                        (ppu_regs.ppu_addr & 0xFF00) | data :
-                        (((uint16_t) data) << 8) | (ppu_regs.ppu_addr & 0xFF);
+                if (ppu_internals.w) {
+                    uint16_t fine_y = data & 0x07;
+                    ppu_internals.t = (ppu_internals.t & 0b1000111111111111) | (fine_y << 12);
+                    uint16_t coarse_y = data >> 3;
+                    ppu_internals.t = (ppu_internals.t & 0b1111110000011111) | (coarse_y << 5);
+                }
+                else {
+                    ppu_internals.x = data & 0x07;
+                    uint16_t coarse_x = data >> 3;
+                    ppu_internals.t = (ppu_internals.t & 0b1111111111100000) | (coarse_x);
+                }
                 ppu_internals.w = !ppu_internals.w;
                 return;
             case 6:
-                ppu_regs.ppu_data = ppu_internals.w ? 
-                        (ppu_regs.ppu_data & 0xFF00) | data :
-                        (((uint16_t) data) << 8) | (ppu_regs.ppu_data & 0xFF);
+                if (ppu_internals.w) {
+                    ppu_internals.t = (ppu_internals.t & 0xFF00) | data;
+                    ppu_internals.v = ppu_internals.t;
+                }
+                else {
+                    ppu_internals.t = (ppu_internals.t & 0xFF) | (data << 8);
+                }
                 ppu_internals.w = !ppu_internals.w;
                 return;
             case 7:
                 ppu_regs.ppu_data = data;
-                increment_ppu_addr();
+                ppu_internals.v += (ppu_regs.ppu_ctrl & 0b100) ? 32 : 1;
                 return;
         }
     } else if (address < 0x401F) {
