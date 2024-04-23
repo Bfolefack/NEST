@@ -7,7 +7,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-uint8_t memory [4096];
+uint8_t memory [0x800];
+uint8_t prg_ram[0x2000];
 
 uint8_t read(uint16_t address) {
     if (address < 0x2000) {
@@ -41,6 +42,8 @@ uint8_t read(uint16_t address) {
         } else {
             return 0; // TODO - APU and I/O registers
         }
+    } else if (address >= 0x6000) {
+        return prg_ram[address - 0x6000];
     } else if (address >= 0x8000) {
         if (prg_rom_size < 0x8000) {
             address = address % 0x4000;
@@ -105,6 +108,8 @@ void write(uint16_t address, uint8_t data) {
         } else {
             return; // TODO - APU and I/O registers
         }
+    } else if (address >= 0x6000) {
+        prg_ram[address - 0x6000] = data;
     } else {
         return; // some mappers may use this space
     }

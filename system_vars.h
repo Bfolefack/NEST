@@ -7,7 +7,8 @@ typedef enum Mirror_Type {
     HORIZONTAL, VERTICAL
 } Mirror_Type;
 
-extern uint8_t memory[4096];
+extern uint8_t memory[0x800];
+extern uint8_t prg_ram[0x2000];
 
 extern uint32_t prg_rom_size;
 
