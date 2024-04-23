@@ -5,7 +5,7 @@
 #include "mem.h"
 
 void test() {
-    if (true /*read(0x6001) == 0xDE && read(0x6002) == 0xB0 /*&& read(0x6003) == 0xG1*/) {
+    if (read(0x6001) == 0xDE && read(0x6002) == 0xB0 && read(0x6003) == 0x61) {
         uint8_t status = read(0x6000);
         if (status < 0x80) {
             uint16_t address = 0x6004;
