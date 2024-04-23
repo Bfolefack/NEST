@@ -21,6 +21,7 @@ uint8_t read(uint16_t address) {
         }
     } else if (address < 0x4000) {
         address = address % 0x0008;
+        uint8_t temp;
         switch (address) {
             case 0: 
             case 1:
@@ -30,7 +31,7 @@ uint8_t read(uint16_t address) {
                 return 0;
             case 2:
                 ppu_internals.w = false;
-                uint8_t temp = ppu_regs.ppu_status;
+                temp = ppu_regs.ppu_status;
                 ppu_regs.ppu_status = ppu_regs.ppu_status & 0b01111111;
                 return temp;
             case 4:
@@ -74,16 +75,18 @@ void write(uint16_t address, uint8_t data) {
         }
     } else if (address < 0x4000) {
         address = address % 0x0008;
+        uint8_t temp;
         switch (address) {
             case 2:
                 perror("Cannot write to read-only register");
                 exit(3);
             case 0: 
-                uint8_t before_status = ppu_regs.ppu_ctrl >> 7;
+                temp = ppu_regs.ppu_ctrl;
                 ppu_regs.ppu_ctrl = data;
                 uint8_t nametable = ppu_regs.ppu_ctrl & 0b00000011;
                 ppu_internals.t = (ppu_internals.t & (0b1111001111111111 | (nametable << 10)));
                 if (!before_status && ppu_regs.ppu_ctrl >> 7 && ppu_regs.ppu_status >> 7) {
+                if (!(temp >> 7) && ppu_regs.ppu_ctrl >> 7 && ppu_regs.ppu_status >> 7) {
                     cpu.nonmaskableInterrupt();
                 }
                 return; // TODO : emulate PPU power-up state?
