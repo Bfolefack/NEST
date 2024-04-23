@@ -24,7 +24,7 @@ int main (int argc, char** argv, char** envp) {
         ppu_cycle(1);
         cpu.clock();
         cycle_number++;
-        if (cycle_number % 0x100 == 0x0) {
+        if (cycle_number % 0x1000 == 0x0) {
             test();
         }
     }

@@ -42,7 +42,7 @@ uint8_t read(uint16_t address) {
         } else {
             return 0; // TODO - APU and I/O registers
         }
-    } else if (address >= 0x6000) {
+    } else if (0x6000 <= address && address < 0x8000) {
         return prg_ram[address - 0x6000];
     } else if (address >= 0x8000) {
         if (prg_rom_size < 0x8000) {
@@ -108,7 +108,7 @@ void write(uint16_t address, uint8_t data) {
         } else {
             return; // TODO - APU and I/O registers
         }
-    } else if (address >= 0x6000) {
+    } else if (0x6000 <= address && address < 0x8000) {
         prg_ram[address - 0x6000] = data;
     } else {
         return; // some mappers may use this space
