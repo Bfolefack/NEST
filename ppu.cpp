@@ -108,7 +108,7 @@ bool ppu_cycle(uint8_t cycles) {
     if (scanline == 241) {
         if (vblank_nmi()) {
             ppu_regs.ppu_status = ppu_regs.ppu_status | 0b10000000;
-            CPU::nonmaskableInterrupt();
+            cpu.nonmaskableInterrupt();
         }
     }
 
@@ -119,4 +119,8 @@ bool ppu_cycle(uint8_t cycles) {
     }
 
     return false;
+}
+
+void render() {
+    
 }
