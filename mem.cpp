@@ -25,9 +25,7 @@ uint8_t read(uint16_t address) {
             case 3:
             case 5:
             case 6:
-                perror("Cannot read from write-only register");
-                // exit(2);
-                return 0; //TODO: Note for michael, do not exit because str instructions will still "read" from these registers
+                return 0;
             case 2:
                 ppu_internals.w = false;
                 return ppu_regs.ppu_status;
@@ -39,8 +37,6 @@ uint8_t read(uint16_t address) {
         }
     } else if (address < 0x401F) {
         if (address == 0x4014) {
-            perror("Cannot read from write-only register");
-            // exit(2)
             return 0;
         } else {
             return 0; // TODO - APU and I/O registers
