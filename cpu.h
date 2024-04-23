@@ -7,7 +7,7 @@
 class CPU {
 public:
     CPU();
-    ~CPU();
+    // ~CPU();
 
     struct Flags {
         bool C; // Carry
@@ -40,8 +40,8 @@ public:
     bool ABX(); // Absolute X
     bool ABY(); // Absolute Y
     bool IND(); // Indirect
-    bool INX(); // Indirect X
-    bool INY(); // Indirect Y
+    bool IDX(); // Indirect X
+    bool IDY(); // Indirect Y
 
     // Instructions
     bool ADC();	bool AND();	
@@ -98,15 +98,13 @@ private:
     const int IRQ_CYCLES = 7;
     const int NMI_CYCLES = 8;
 
-    // Temp (use bus)
-    uint8_t read(uint16_t addr);
-    void write(uint16_t addr, uint8_t data);
-
     // Stack
     uint8_t pull();
     void push(uint8_t value);
     void pullFlags();
     void pushFlags();
+
+    void print_regs();
 
     struct Instruction {
         std::string name;

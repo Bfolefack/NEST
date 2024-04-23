@@ -27,7 +27,7 @@ uint8_t prom[0x20];
 Mirror_Type mirroring;
 
 void load_nes(char* filename) {
-    FILE* file = fopen(filename, "r");
+    FILE* file = fopen(filename, "rb");
     if (file == NULL) {
         perror("Cannot read from file");
         exit(-1);
