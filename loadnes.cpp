@@ -33,7 +33,7 @@ void load_nes(char* filename) {
         exit(-1);
     }
 
-    name = (uint8_t*) malloc(4 * sizeof(uint8_t));
+    name = (char*) malloc(4 * sizeof(uint8_t));
     fread(name, sizeof(uint8_t), 4, file);
 
     prg_rom_size = 16384 * (uint8_t) fgetc(file);
@@ -46,7 +46,7 @@ void load_nes(char* filename) {
     flags_9 = fgetc(file);
     flags_10 = fgetc(file);
 
-    padding = (uint8_t*) malloc(5 * sizeof(uint8_t));
+    padding = (char*) malloc(5 * sizeof(uint8_t));
     fread(padding, sizeof(uint8_t), 5, file);
 
     if (flags_6 & 0b10) { // file contains trainer

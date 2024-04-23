@@ -44,17 +44,17 @@ void close_SDL(){
     SDL_Quit();
 }
 
-int main (int argc, char* args[]){
-    printf("Waluigi");
-    init_SDL();
-    uint8_t** image = create_image();
-    for(int y = 0; y < SCREEN_HEIGHT; y++){
-        for(int x = 0; x < SCREEN_WIDTH; x++){
-            image[y][x] = x;
-        }
-    }
-    draw_SDL(image);
-    SDL_Delay(2000);
-    close_SDL();
-    return 0;
-}
+// int main (int argc, char* args[]){
+//     printf("Waluigi");
+//     init_SDL();
+//     uint8_t** image = create_image();
+//     for(int y = 0; y < SCREEN_HEIGHT; y++){
+//         for(int x = 0; x < SCREEN_WIDTH; x++){
+//             image[y][x] = x;
+//         }
+//     }
+//     draw_SDL(image);
+//     SDL_Delay(2000);
+//     close_SDL();
+//     return 0;
+// }

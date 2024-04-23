@@ -1,10 +1,14 @@
 #include "mem.h"
 #include "ppu.h"
 #include "system_vars.h"
-#include "stdint.h"
-#include "stdbool.h"
 
-uint8_t memory [4096];
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+uint8_t memory [0x800];
+uint8_t prg_ram[0x2000];
 
 uint8_t read(uint16_t address) {
     if (address < 0x2000) {
@@ -22,9 +26,7 @@ uint8_t read(uint16_t address) {
             case 3:
             case 5:
             case 6:
-                perror("Cannot read from write-only register");
-                // exit(2);
-                return 0; //TODO: Note for michael, do not exit because str instructions will still "read" from these registers
+                return 0;
             case 2:
                 ppu_internals.w = false;
                 return ppu_regs.ppu_status;
@@ -36,12 +38,12 @@ uint8_t read(uint16_t address) {
         }
     } else if (address < 0x401F) {
         if (address == 0x4014) {
-            perror("Cannot read from write-only register");
-            // exit(2)
             return 0;
         } else {
             return 0; // TODO - APU and I/O registers
         }
+    } else if (0x6000 <= address && address < 0x8000) {
+        return prg_ram[address - 0x6000];
     } else if (address >= 0x8000) {
         if (prg_rom_size < 0x8000) {
             address = address % 0x4000;
@@ -106,6 +108,8 @@ void write(uint16_t address, uint8_t data) {
         } else {
             return; // TODO - APU and I/O registers
         }
+    } else if (0x6000 <= address && address < 0x8000) {
+        prg_ram[address - 0x6000] = data;
     } else {
         return; // some mappers may use this space
     }
