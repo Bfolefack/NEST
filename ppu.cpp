@@ -86,13 +86,16 @@ uint8_t vblank_nmi() {
     return ppu_regs.ppu_ctrl >> 7;
 }
 
+uint8_t vblank() {
+    return ppu_regs.ppu_status >> 7;
+}
+
 void write_to_ctrl(uint8_t value) {
     uint8_t before_status = vblank_nmi();
     ppu_regs.ppu_ctrl = value;
-    if (!before_status && vblank_nmi && vblank) {
+    if (!before_status && vblank_nmi() && vblank()) {
         // generate NMI
     }
-
 }
 
 bool ppu_cycle(uint8_t cycles) {
@@ -104,14 +107,14 @@ bool ppu_cycle(uint8_t cycles) {
 
     if (scanline == 241) {
         if (vblank_nmi()) {
-            vblank = true;
-            // send NMI signal to CPU
+            ppu_regs.ppu_status = ppu_regs.ppu_status | 0b10000000;
+            CPU::nonmaskableInterrupt();
         }
     }
 
     if (scanline >= 262) {
         scanline = 0;
-        vblank = false;
+        ppu_regs.ppu_status = ppu_regs.ppu_status & 0b01111111;
         return true;
     }
 
