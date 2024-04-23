@@ -1,8 +1,11 @@
 #include "mem.h"
 #include "ppu.h"
 #include "system_vars.h"
-#include "stdint.h"
-#include "stdbool.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 uint8_t read(uint16_t address) {
     if (address < 0x2000) {

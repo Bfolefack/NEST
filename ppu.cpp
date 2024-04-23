@@ -36,6 +36,27 @@ void increment_ppu_addr() {
     ppu_regs.ppu_addr += (ppu_regs.ppu_ctrl & 0b100) ? 32 : 1;
 }
 
+uint16_t mirror_vram_addr(uint16_t addr) {
+    if (mirroring == HORIZONTAL) {
+        if (addr >= 0x2400 && addr < 0x2800) {
+            return addr - 0x2400;
+        }
+        else if (addr >= 0x2C00) {
+            return addr - 0x2400;
+        }
+        return addr - 0x2000;
+    }
+    else {
+        if (addr >= 0x2800 && addr < 0x2C00) {
+            return addr - 0x2800;
+        }
+        else if (addr >= 0x2C00) {
+            return addr - 0x2800;
+        }
+        return addr - 0x2800;
+    }
+}
+
 uint8_t read_ppu() {
     uint16_t addr = ppu_regs.ppu_addr;
     increment_ppu_addr();
@@ -55,27 +76,6 @@ uint8_t read_ppu() {
         result = palette_table[addr % 0x20];
 
         // read from palette table
-    }
-}
-
-uint16_t mirror_vram_addr(uint16_t addr) {
-    if (mirroring == HORIZONTAL) {
-        if (addr >= 0x2400 && addr < 0x2800) {
-            return addr - 0x2400;
-        }
-        else if (addr >= 0x2C00) {
-            return addr - 0x2400;
-        }
-        return addr - 0x2000;
-    }
-    else {
-        if (addr >= 0x2800 && addr < 0x2C00) {
-            return addr - 0x2800;
-        }
-        else if (addr >= 0x2C00) {
-            return addr - 0x2800;
-        }
-        return addr - 0x2800;
     }
 }
 

@@ -26,5 +26,6 @@ extern uint8_t palette_table[32];
 extern uint8_t vram[2048];
 extern uint8_t oam_data[256];
 
+extern void increment_ppu_addr();
 
 
