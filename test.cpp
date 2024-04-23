@@ -13,16 +13,17 @@ void test() {
                 printf("%c", (char) memory[address]);
                 address++;
             }
+            printf("\n");
         } else if (status == 0x80) {
-            printf("Test still in progress.");
+            printf("Test still in progress.\n");
         } else if (status == 0x81) {
-            printf("Reset required.");
+            printf("Reset required.\n");
         } else {
-            perror("Unknown data at 0x6000");
+            printf("Unknown data at 0x6000. Exiting.\n");
             exit(4);
         }
     } else {
-        printf("Test output memory in use by another program.");
+        printf("Test output memory in use by another program.\n");
     }
     
 }
