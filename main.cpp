@@ -4,8 +4,9 @@
 #include "loadnes.h"
 #include "cpu.h"
 #include "ppu.h"
-// #include "decode.h"
-// #include "execute.h"
+#include "test.h"
+
+uint64_t cycle_number;
 
 int main (int argc, char** argv, char** envp) {
     if (argc < 2) {
@@ -16,13 +17,15 @@ int main (int argc, char** argv, char** envp) {
     load_nes(argv[1]);
 
     CPU cpu = CPU();
-    
-
 
     while (1) {
         ppu_cycle(1);
         ppu_cycle(1);
         ppu_cycle(1);
         cpu.clock();
+        cycle_number++;
+        if (cycle_number % 0x100 == 0x0) {
+            test();
+        }
     }
 }
