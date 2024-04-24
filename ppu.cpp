@@ -153,10 +153,11 @@ void ppu_cycle() {
                     tile_low = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y()));
                     break;
                 case 6:
-                   background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
-                   tile_low = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y() + 8));
-                   break;
+                    background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
+                    tile_low = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y() + 8));
+                    break;
                 case 7:
+                    break;
             }
         }
 

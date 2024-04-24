@@ -5,6 +5,7 @@
 #include "cpu.h"
 #include "ppu.h"
 #include "test.h"
+#include "vidya.h"
 
 uint64_t cycle_number;
 CPU cpu;
@@ -15,12 +16,14 @@ int main (int argc, char** argv, char** envp) {
         exit(1);
     }
 
+    init_SDL();
     load_nes(argv[1]);
 
     CPU cpu = CPU();
     cycle_number = 0;
 
     while (1) {
+        refresh_window();
         ppu_cycle();
         ppu_cycle();
         ppu_cycle();

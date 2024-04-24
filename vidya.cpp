@@ -1,4 +1,6 @@
 #include "vidya.h"
+#include "ppu.h"
+#include "src/include/SDL2/SDL.h"
 
 SDL_Window* window = NULL;
 SDL_Surface* screenSurface = NULL;
@@ -16,45 +18,32 @@ void init_SDL(){
             screenSurface = SDL_GetWindowSurface(window);
         }
     }
+    SDL_FillRect(screenSurface, NULL, SDL_MapRGB(screenSurface->format, 0x00, 0x00, 0x00));
+    SDL_UpdateWindowSurface(window);
 }
 
-uint8_t** create_image(){
-    uint8_t** image = (uint8_t**) calloc(SCREEN_HEIGHT, sizeof(uint8_t*));
-    for(int y = 0; y < SCREEN_HEIGHT; y++){
-        image[y] = (uint8_t*) calloc(SCREEN_WIDTH, sizeof(uint8_t));
+void refresh_window(){
+    SDL_Event event;
+    while(SDL_PollEvent(&event)){
+        if(event.type == SDL_QUIT){
+            close_SDL();
+            exit(0);
+        }
     }
-    return image;
 }
 
-void draw_SDL(uint8_t** image){
+void draw_window(){
     SDL_FillRect(screenSurface, NULL, SDL_MapRGB(screenSurface->format, 0x00, 0x00, 0x00));
     for(int y = 0; y < SCREEN_HEIGHT; y++){
         for(int x = 0; x < SCREEN_WIDTH; x++){
-            uint8_t pixel = image[y][x];
             SDL_Rect rect = {x, y, 1, 1};
-            SDL_FillRect(screenSurface, &rect, SDL_MapRGB(screenSurface->format, pixel, pixel, pixel));
+            SDL_FillRect(screenSurface, &rect, SDL_MapRGB(screenSurface->format, std::get<0>(image_buffer[y][x]), std::get<1>(image_buffer[y][x]), std::get<2>(image_buffer[y][x])));
         }
     }
     SDL_UpdateWindowSurface(window);
-
 }
 
 void close_SDL(){
     SDL_DestroyWindow(window);
     SDL_Quit();
 }
-
-// int main (int argc, char* args[]){
-//     printf("Waluigi");
-//     init_SDL();
-//     uint8_t** image = create_image();
-//     for(int y = 0; y < SCREEN_HEIGHT; y++){
-//         for(int x = 0; x < SCREEN_WIDTH; x++){
-//             image[y][x] = x;
-//         }
-//     }
-//     draw_SDL(image);
-//     SDL_Delay(2000);
-//     close_SDL();
-//     return 0;
-// }
