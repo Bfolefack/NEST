@@ -11,6 +11,10 @@ uint8_t oam_data[256];
 using Color = std::tuple<uint8_t, uint8_t, uint8_t>;
 uint16_t ppuCycles = 0;
 int16_t scanline = 0;
+uint8_t name_table;
+uint8_t attribute_table;
+uint8_t tile_low;
+uint8_t tile_high;
 
 // source: https://bugzmanov.github.io/nes_ebook/chapter_6_3.html
 const std::array<Color, 64> SYSTEM_PALETTE = {
@@ -92,14 +96,62 @@ uint8_t vblank() {
     return ppu_regs.ppu_status >> 7;
 }
 
-void ppu_cycle() {
-    if (scanline >= -1 && ppuCycles == 1) {
-        if (scanline == -1 && ppuCycles == 1) {
+uint16_t fine_y() {
+    return (ppu_internals.v & 0b111000000000000) >> 12;
+}
 
+uint16_t nametable_y() {
+    return (ppu_internals.v & 0b100000000000) >> 11;
+}
+
+uint16_t nametable_x() {
+    return (ppu_internals.v & 0b10000000000) >> 10;
+}
+
+uint16_t coarse_y() {
+    return (ppu_internals.v & 0b1111100000) >> 5;
+}
+
+uint16_t coarse_x() {
+    return ppu_internals.v & 0b11111;
+}
+
+
+void ppu_cycle() {
+    if (scanline >= -1 && scanline < 240) {
+        if (scanline == -1 && ppuCycles == 1) {
+            ppu_regs.ppu_status = ppu_regs.ppu_status & 0b01111111;
         }
 
         if ((ppuCycles >= 2 && ppuCycles < 258) || (ppuCycles >= 321 && ppuCycles < 338)) {
+            switch ((ppuCycles - 1) % 8) {
+                case 0:
+                    name_table = ppu_read(0x2000 | (ppu_internals.v & 0x0FFF));
+                    break;
+                case 2: 
+                    attribute_table = ppu_read(0x23C0 | (nametable_y() << 11)
+                    | (nametable_x() << 10))
+                    | ((coarse_y() >> 2) << 3)
+                    | (coarse_x() >> 2);
 
+                    if (coarse_y() & 0x02) {
+                        attribute_table = attribute_table >> 4;
+                    }
+                    if (coarse_x() & 0x02) {
+                        attribute_table = attribute_table >> 2;
+                    }
+                    attribute_table = attribute_table & 0x03;
+                    break;
+                case 4: 
+                    uint16_t background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
+                    tile_low = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y()));
+                    break;
+                case 6:
+                   uint16_t background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
+                   tile_low = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y() + 8));
+                   break;
+                case 7:
+            }
         }
 
         if (ppuCycles == 256) {
