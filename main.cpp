@@ -18,6 +18,7 @@ int main (int argc, char** argv, char** envp) {
     load_nes(argv[1]);
 
     CPU cpu = CPU();
+    cycle_number = 0;
 
     while (1) {
         ppu_cycle();
@@ -25,7 +26,7 @@ int main (int argc, char** argv, char** envp) {
         ppu_cycle();
         cpu.clock();
         cycle_number++;
-        if (cycle_number % 0x100000 == 0x0) {
+        if (cycle_number % 0x100 == 0x0) {
             test();
         }
     }
