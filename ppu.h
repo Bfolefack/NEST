@@ -1,5 +1,8 @@
 #include "system_vars.h"
 
+using Color = std::tuple<uint8_t, uint8_t, uint8_t>;
+Color image_buffer[240][256];
+
 typedef struct PPU_EXTERNAL_REGS {
     uint8_t ppu_ctrl;
     uint8_t ppu_mask;
@@ -29,6 +32,7 @@ extern uint8_t data_buffer;
 extern uint8_t palette_table[32];
 extern uint8_t vram[2048];
 extern uint8_t oam_data[256];
+extern Coimage_buffer
 
 extern void ppu_cycle();
 extern uint8_t ppu_read(uint16_t addr);

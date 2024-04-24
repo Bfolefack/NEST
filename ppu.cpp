@@ -5,9 +5,12 @@
 
 PPU_EXTERNAL_REGS ppu_regs;
 PPU_INTERNAL_REGS ppu_internals;
+
 uint8_t palette_table[32];
 uint8_t vram[2048];
 uint8_t oam_data[256];
+
+
 using Color = std::tuple<uint8_t, uint8_t, uint8_t>;
 uint16_t ppuCycles = 0;
 int16_t scanline = 0;
@@ -15,6 +18,8 @@ uint8_t name_table;
 uint8_t attribute_table;
 uint8_t tile_low;
 uint8_t tile_high;
+bool odd_frame = false;
+Color image_buffer[240][256];
 
 // source: https://bugzmanov.github.io/nes_ebook/chapter_6_3.html
 const std::array<Color, 64> SYSTEM_PALETTE = {
@@ -124,6 +129,7 @@ void ppu_cycle() {
         }
 
         if ((ppuCycles >= 2 && ppuCycles < 258) || (ppuCycles >= 321 && ppuCycles < 338)) {
+            uint16_t background;
             switch ((ppuCycles - 1) % 8) {
                 case 0:
                     name_table = ppu_read(0x2000 | (ppu_internals.v & 0x0FFF));
@@ -143,11 +149,11 @@ void ppu_cycle() {
                     attribute_table = attribute_table & 0x03;
                     break;
                 case 4: 
-                    uint16_t background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
+                    background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
                     tile_low = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y()));
                     break;
                 case 6:
-                   uint16_t background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
+                   background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
                    tile_low = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y() + 8));
                    break;
                 case 7:
@@ -164,9 +170,39 @@ void ppu_cycle() {
                 cpu.nonmaskableInterrupt();
             }
         }
+
+        if (ppuCycles == 340 || (odd_frame && ppuCycles == 339 && scanline == -1)) {
+            ppuCycles = 0;
+            if (scanline == 260) {
+                scanline = -1;
+                odd_frame = !odd_frame;
+            } else {
+                scanline++;
+            }
+        } else {
+            ppuCycles++;
+        }
     }
 }
 
-void render_pixel() {
-
+Color mask_pixel(Color color) {
+    if (ppu_regs.ppu_mask & 0b1) {
+        // render in grayscale
+        uint8_t average = (uint8_t) (((uint16_t) std::get<0>(color) + (uint16_t) std::get<1>(color) + (uint16_t) std::get<2>(color)) / 3);
+        return Color(average, average, average);
+    } else {
+        if (ppu_regs.ppu_mask & 0b100000) {
+            // emphasize red
+            color = Color(std::get<0>(color) + (std::get<0>(color) < 0xE0 ? 0x20 : 0x0), std::get<1>(color), std::get<2>(color));
+        }
+        if (ppu_regs.ppu_mask & 0b1000000) {
+            // emphasize green
+            color = Color(std::get<0>(color), std::get<1>(color) + (std::get<1>(color) < 0xE0 ? 0x20 : 0x0), std::get<2>(color));
+        }
+        if (ppu_regs.ppu_mask & 0b10000000) {
+            // emphasize blue
+            color = Color(std::get<0>(color), std::get<1>(color), std::get<2>(color) + (std::get<2>(color) < 0xE0 ? 0x20 : 0x0));
+        }
+        return color;
+    }   
 }
