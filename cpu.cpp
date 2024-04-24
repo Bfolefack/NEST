@@ -101,7 +101,7 @@ void CPU::reset() {
     regs.flags.I = 1;
     regs.flags.D = 0;
     regs.flags.B = 0;
-    regs.flags.X = 0;
+    regs.flags.X = 1;
     regs.flags.V = 0;
     regs.flags.N = 0;
 
@@ -363,9 +363,9 @@ bool CPU::BEQ() {
 }
 
 bool CPU::BIT() {
-    regs.flags.N = data >> 7;
+    regs.flags.N = (data >> 6) & 1;
     regs.flags.Z = (regs.A & data) == 0;
-    regs.flags.V = (data >> 6) & 1;
+    regs.flags.V = (data >> 5) & 1;
     return 0;
 }
 
