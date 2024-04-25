@@ -154,7 +154,7 @@ void write(uint16_t address, uint8_t data) {
                 ppu_internals.w = !ppu_internals.w;
                 return;
             case 7:
-                ppu_regs.ppu_data = data;
+                ppu_write(ppu_internals.v, data);
                 ppu_internals.v += (ppu_regs.ppu_ctrl & 0b100) ? 32 : 1;
                 return;
         }

@@ -235,39 +235,39 @@ void sprite_evaluation() {
     }
 }
 
-// uint8_t sprite_pixel() {
-    // uint16_t current_x = ppuCycles - 1;
-    // uint8_t using_sprite = 8;
-    // uint8_t diff;
-    // for (uint8_t i = 0; i < 8; i++) {
-        // uint8_t diff = current_x - sprite_xes[i];
-        // if (diff < 8) {
-            // using_sprite = i;
-            // break;
-        // }
-    // }
-    // if (using_sprite < 8) {
-        // return sprite_tile_data[using_sprite][diff];
-    // } else {
-        // return 0;
-    // }
-// }
-// 
-// uint8_t choose_pixel(uint8_t sprite_pixel, uint8_t bg_pixel) {
-    // if (!render_sprites()) {
-        // return bg_pixel;
-    // } else if (!render_background()) {
-        // return (1 << 4) | sprite_pixel;
-    // } else if ((sprite_pixel & 0b11) == 0b00) {
-        // return bg_pixel;
-    // } else if ((bg_pixel & 0b11) == 0b00) {
-        // return (1 << 4) | sprite_pixel;
-    // } else if () {
-// 
-    // } else {
-// 
-    // }
-// }
+uint8_t sprite_pixel() {
+    uint16_t current_x = ppuCycles - 1;
+    uint8_t using_sprite = 8;
+    uint8_t diff;
+    for (uint8_t i = 0; i < 8; i++) {
+        uint8_t diff = current_x - sprite_xes[i];
+        if (diff < 8) {
+            using_sprite = i;
+            break;
+        }
+    }
+    if (using_sprite < 8) {
+        return sprite_tile_data[using_sprite][diff] | (sprite_attributes[using_sprite] & 0b100000); // flag added for muxing
+    } else {
+        return 0;
+    }
+}
+
+uint8_t choose_pixel(uint8_t sprite_pixel, uint8_t bg_pixel) {
+    if (!render_sprites()) {
+        return bg_pixel;
+    } else if (!render_background()) {
+        return (1 << 4) | sprite_pixel;
+    } else if ((sprite_pixel & 0b11) == 0b00) {
+        return bg_pixel;
+    } else if ((bg_pixel & 0b11) == 0b00) {
+        return (1 << 4) | sprite_pixel;
+    } else if (sprite_pixel & 0b100000) {
+        return (1 << 4) | sprite_pixel;
+    } else {
+        return bg_pixel;
+    }
+}
 
 void update_shift() {
     shift_pattern_low = (shift_pattern_low & 0xFF00) | tile_low;
