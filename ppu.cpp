@@ -9,16 +9,22 @@ PPU_INTERNAL_REGS ppu_internals;
 uint8_t palette_table[32];
 uint8_t vram[2048];
 uint8_t oam_data[256];
-
+uint8_t oam_secondary[32];
+bool odd_frame = false;
 
 using Color = std::tuple<uint8_t, uint8_t, uint8_t>;
 uint16_t ppuCycles = 0;
 int16_t scanline = 0;
+
+uint8_t sprites;
+uint8_t oam_read;
+uint8_t sprite_index_in_oam_data;
+uint8_t byte_of_sprite;
+
 uint8_t name_table;
 uint8_t attribute;
 uint8_t tile_low;
 uint8_t tile_high;
-bool odd_frame = false;
 Color image_buffer[240][256];
 
 // source: https://bugzmanov.github.io/nes_ebook/chapter_6_3.html
@@ -101,6 +107,11 @@ uint8_t vblank() {
     return ppu_regs.ppu_status >> 7;
 }
 
+uint16_t tall_sprites() {
+    return ppu_regs.ppu_ctrl & 0b100000;
+}
+
+
 uint16_t fine_y() {
     return (ppu_internals.v & 0b111000000000000) >> 12;
 }
@@ -121,14 +132,68 @@ uint16_t coarse_x() {
     return ppu_internals.v & 0b11111;
 }
 
+void sprite_evaluation() {
+    if (0 <= scanline && scanline < 240) {
+        // sprite evaluation
+        if (1 <= ppuCycles && ppuCycles <= 64) {
+            if (ppuCycles & 0b1) {
+                oam_read = 0xFF;
+            } else {
+                oam_secondary[ppuCycles >> 1] = oam_read;
+            }
+        } else if (65 <= ppuCycles && ppuCycles <= 256) {
+            if (ppuCycles & 0b1) {
+                oam_read = oam_data[sprite_index_in_oam_data * 4 + byte_of_sprite];
+            } else if (sprite_index_in_oam_data < 64) {
+                if (sprites >= 8) {
+                    if (scanline >= oam_read && (scanline < oam_read + 8 || tall_sprites() && scanline < oam_read + 16)) {
+                        sprite_index_in_oam_data = 64; // stop sprite evaluation this scanline
+                        //TODO handle overflow in registers
+                    } else {
+                        sprite_index_in_oam_data++;
+                        // bug in original hardware that some games rely on
+                        if (byte_of_sprite == 3) {
+                            byte_of_sprite = 0;
+                        } else {
+                            byte_of_sprite++;
+                        }
+                    }
+                } else if (byte_of_sprite == 0) {
+                    if (scanline >= oam_read && (scanline < oam_read + 8 || tall_sprites() && scanline < oam_read + 16)) {
+                        oam_secondary[sprites * 4 + byte_of_sprite] = oam_read;
+                        byte_of_sprite++;
+                    } else {
+                        sprite_index_in_oam_data++;
+                    }
+                } else {
+                    oam_secondary[sprites * 4 + byte_of_sprite] = oam_read;
+                    if (byte_of_sprite == 3) {
+                        byte_of_sprite = 0;
+                        sprite_index_in_oam_data++;
+                        sprites++;
+                    } else {
+                        byte_of_sprite++;
+                    }
+                }
+            }
+        } else if (257 <= ppuCycles && ppuCycles <= 320) {
+            
+        }
+    }
+}
 
 void ppu_cycle() {
+
+    sprite_evaluation();
+
     if (scanline >= -1 && scanline < 240) {
+        
+
         if (scanline == -1 && ppuCycles == 1) {
             ppu_regs.ppu_status = ppu_regs.ppu_status & 0b01111111;
         }
 
-        if ((ppuCycles >= 2 && ppuCycles < 258) || (ppuCycles >= 321 && ppuCycles < 338)) {
+        if ((ppuCycles >= 1 && ppuCycles < 257) || (ppuCycles >= 321 && ppuCycles < 337)) {
             uint16_t background;
             switch ((ppuCycles - 1) % 8) {
                 case 0:
@@ -209,6 +274,9 @@ void ppu_cycle() {
 
     if (ppuCycles == 340 || (odd_frame && ppuCycles == 339 && scanline == -1)) {
         ppuCycles = 0;
+        sprites = 0;
+        sprite_index_in_oam_data = 0;
+        byte_of_sprite = 0;
         if (scanline == 260) {
             scanline = -1;
             odd_frame = !odd_frame;
