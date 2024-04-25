@@ -15,7 +15,7 @@ using Color = std::tuple<uint8_t, uint8_t, uint8_t>;
 uint16_t ppuCycles = 0;
 int16_t scanline = 0;
 uint8_t name_table;
-uint8_t attribute_table;
+uint8_t attribute;
 uint8_t tile_low;
 uint8_t tile_high;
 bool odd_frame = false;
@@ -135,18 +135,18 @@ void ppu_cycle() {
                     name_table = ppu_read(0x2000 | (ppu_internals.v & 0x0FFF));
                     break;
                 case 2: 
-                    attribute_table = ppu_read(0x23C0 | (nametable_y() << 11)
+                    attribute = ppu_read(0x23C0 | (nametable_y() << 11)
                     | (nametable_x() << 10))
                     | ((coarse_y() >> 2) << 3)
                     | (coarse_x() >> 2);
 
                     if (coarse_y() & 0x02) {
-                        attribute_table = attribute_table >> 4;
+                        attribute = attribute >> 4;
                     }
                     if (coarse_x() & 0x02) {
-                        attribute_table = attribute_table >> 2;
+                        attribute = attribute >> 2;
                     }
-                    attribute_table = attribute_table & 0x03;
+                    attribute = attribute & 0x03;
                     break;
                 case 4: 
                     background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
@@ -157,32 +157,66 @@ void ppu_cycle() {
                     tile_low = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y() + 8));
                     break;
                 case 7:
+                    if (coarse_x() == 31) {
+                        ppu_internals.v = ppu_internals.v & 0xFFE0; // reset coarse x to 0
+                        uint16_t inverse_name_table_x = ~nametable_x();
+                        inverse_name_table_x =  inverse_name_table_x << 10;
+                        ppu_internals.v = (ppu_internals.v & 0b111101111111111) | inverse_name_table_x; 
+                    }
+                    else {
+                        ppu_internals.v++;
+                    }
                     break;
             }
         }
 
+        // scroll down 1 line
         if (ppuCycles == 256) {
-
-        }
-
-        if (scanline == 241 && ppuCycles == 1) {
-            if (vblank_nmi()) {
-                ppu_regs.ppu_status = ppu_regs.ppu_status | 0b10000000;
-                cpu.nonmaskableInterrupt();
+            uint16_t fineY = fine_y();
+            if (fineY < 7) {
+                fineY++;
+                fineY = fineY << 12;
+                ppu_internals.v = (ppu_internals.v & 0xFFF) | fineY;
+            }
+            else {
+                ppu_internals.v = (ppu_internals.v & 0xFFF);
+                uint16_t coarseY = coarse_y();
+                if (coarseY < 29) {
+                    coarseY++;
+                }
+                else {
+                    coarseY = 0;
+                    uint16_t inverse_name_table_y = ~nametable_y();
+                    inverse_name_table_y =  inverse_name_table_y << 11;
+                    ppu_internals.v = (ppu_internals.v & 0b111011111111111) | inverse_name_table_y; 
+                }
+                coarseY = coarseY << 5;
+                ppu_internals.v = (ppu_internals.v & 0b111110000011111) | coarseY;
             }
         }
 
-        if (ppuCycles == 340 || (odd_frame && ppuCycles == 339 && scanline == -1)) {
-            ppuCycles = 0;
-            if (scanline == 260) {
-                scanline = -1;
-                odd_frame = !odd_frame;
-            } else {
-                scanline++;
-            }
+        if (ppuCycles == 257) {
+            
+        }
+    }
+
+    if (scanline == 241 && ppuCycles == 1) {
+        if (vblank_nmi()) {
+            ppu_regs.ppu_status = ppu_regs.ppu_status | 0b10000000;
+            cpu.nonmaskableInterrupt();
+        }
+    }
+
+    if (ppuCycles == 340 || (odd_frame && ppuCycles == 339 && scanline == -1)) {
+        ppuCycles = 0;
+        if (scanline == 260) {
+            scanline = -1;
+            odd_frame = !odd_frame;
         } else {
-            ppuCycles++;
+            scanline++;
         }
+    } else {
+        ppuCycles++;
     }
 }
 
