@@ -208,14 +208,18 @@ void sprite_evaluation() {
                         y_index = 8 - y_index;
                     }
                 }
-                uint8_t plane_0 = ppu_read(tile_index | (y_index << 4) | 0b0);
-                uint8_t plane_1 = ppu_read(tile_index | (y_index << 4) | 0b1);
+                uint8_t plane_0 = ppu_read(tile_index | (y_index << 1) | 0b0);
+                uint8_t plane_1 = ppu_read(tile_index | (y_index << 1) | 0b1);
                 if (attributes & 0b1000000) { // horizontal flip
                     for (uint8_t i = 0; i < 8; i++) {
-                        uint16_t index = ppu_read((plane_0 & (1 << i)) >> (i - 1)) | ((plane_1 & (1 << i)) >> i);
+                        uint16_t index = ((plane_0 & (1 << (7 - i))) >> (6 - i)) | ((plane_1 & (7 - i)) >> (7 - i));
+                        sprite_tile_data[secondary_index][i] = ppu_read(0x3F10 | ((attributes & 0b11) << 2) | index);
                     }
                 } else {
-                    
+                    for (uint8_t i = 0; i < 8; i++) {
+                        uint16_t index = ((plane_0 & (1 << i)) >> (i - 1)) | ((plane_1 & (1 << i)) >> i);
+                        sprite_tile_data[secondary_index][i] = ppu_read(0x3F10 | ((attributes & 0b11) << 2) | index);
+                    }
                 }
             }
         }
