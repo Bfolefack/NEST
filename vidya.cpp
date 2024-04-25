@@ -1,10 +1,12 @@
 #include "vidya.h"
 #include "ppu.h"
+#include "cpu.h"
 #include "src/include/SDL2/SDL.h"
 
 SDL_Window* window = NULL;
 SDL_Surface* screenSurface = NULL;
 
+Joypad P1_joypad = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 
 void init_SDL(){
@@ -28,6 +30,41 @@ void refresh_window(){
         if(event.type == SDL_QUIT){
             close_SDL();
             exit(0);
+        } else if (event.type == SDL_KEYDOWN) {
+            switch(event.key.keysym.sym){
+                case SDLK_ESCAPE:
+                    close_SDL();
+                    exit(0);
+                    break;
+                case SDLK_w: // UP
+                    P1_joypad.UP = 1;
+                    break;
+                case SDLK_a: // LEFT
+                    P1_joypad.LEFT = 1;
+                    break;
+                case SDLK_s: // DOWN
+                    P1_joypad.DOWN = 1;
+                    break;
+                case SDLK_d: // RIGHT
+                    P1_joypad.RIGHT = 1;
+                    break;
+                case SDLK_LSHIFT: // B
+                    P1_joypad.B = 1;
+                    break;
+                case SDLK_SPACE: // A
+                    P1_joypad.A = 1;
+                    break;
+                case SDLK_RETURN: // START
+                    P1_joypad.START = 1;
+                    break;
+                case SDLK_RSHIFT: // SELECT
+                    P1_joypad.SELECT = 1;
+                    break;
+                case SDLK_DELETE: // RESET
+                    cpu.reset();
+                    break;
+            }
+        
         }
     }
 }

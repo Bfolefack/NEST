@@ -115,3 +115,4 @@ private:
     
     std::vector<Instruction> op_table; // Opcode table
 };
+

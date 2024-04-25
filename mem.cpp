@@ -1,6 +1,7 @@
 #include "mem.h"
 #include "ppu.h"
 #include "system_vars.h"
+#include "vidya.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -48,6 +49,36 @@ uint8_t read(uint16_t address) {
         }
     } else if (address < 0x401F) {
         if (address == 0x4014) {
+            return 0;
+        }  else if (address == 0x4016) {
+            if(P1_joypad.btn_pointer > 7) {
+                return 1;
+            }
+            uint8_t response = 0;
+            switch ((uint8_t) P1_joypad.btn_pointer)
+            {
+            case 0:
+                response = P1_joypad.A;
+            case 1:
+                response = P1_joypad.B;
+            case 2:
+                response = P1_joypad.SELECT;
+            case 3:
+                response = P1_joypad.START;
+            case 4:
+                response = P1_joypad.UP;
+            case 5:
+                response = P1_joypad.DOWN;
+            case 6:
+                response = P1_joypad.LEFT;
+            case 7:
+                response = P1_joypad.RIGHT;
+            }
+            if (!P1_joypad.strobe && P1_joypad.btn_pointer < 8) {
+                P1_joypad.btn_pointer++;
+            }
+            return response;
+        } else if (address == 0x4017) {
             return 0;
         } else {
             return 0; // TODO - APU and I/O registers
@@ -133,7 +164,16 @@ void write(uint16_t address, uint8_t data) {
                 oam_data[i] = memory[0x100 * data + i];
             }
             return;
-        } else {
+        }   else if (address == 0x4016) {
+            if (data & 0x01) {
+                P1_joypad.strobe = 1;
+                P1_joypad.btn_pointer = 0;
+            } else {
+                P1_joypad.strobe = 0;
+            }
+            return;
+        } else if (address == 0x4017) {
+        }  else {
             return; // TODO - APU and I/O registers
         }
     } else if (0x6000 <= address && address < 0x8000) {

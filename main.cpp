@@ -8,7 +8,7 @@
 #include "vidya.h"
 
 uint64_t cycle_number;
-CPU cpu;
+CPU cpu= CPU();
 
 int main (int argc, char** argv, char** envp) {
     if (argc < 2) {
@@ -19,7 +19,6 @@ int main (int argc, char** argv, char** envp) {
     init_SDL();
     load_nes(argv[1]);
 
-    CPU cpu = CPU();
     cycle_number = 0;
 
     while (1) {
