@@ -10,6 +10,7 @@ uint8_t palette_table[32];
 uint8_t vram[2048];
 uint8_t oam_data[256];
 uint8_t oam_secondary[32];
+uint8_t sprite_tile_data[8];
 bool odd_frame = false;
 
 using Color = std::tuple<uint8_t, uint8_t, uint8_t>;
@@ -26,6 +27,11 @@ uint8_t attribute;
 uint8_t tile_low;
 uint8_t tile_high;
 Color image_buffer[240][256];
+
+uint16_t shift_pattern_low;
+uint16_t shift_pattern_high;
+uint16_t shift_attribute_low;
+uint16_t shift_attribute_high;
 
 // source: https://bugzmanov.github.io/nes_ebook/chapter_6_3.html
 const std::array<Color, 64> SYSTEM_PALETTE = {
@@ -46,6 +52,15 @@ const std::array<Color, 64> SYSTEM_PALETTE = {
     Color(0xFF, 0xF7, 0x9C), Color(0xD7, 0xE8, 0x95), Color(0xA6, 0xED, 0xAF), Color(0xA2, 0xF2, 0xDA),
     Color(0x99, 0xFF, 0xFC), Color(0xDD, 0xDD, 0xDD), Color(0x11, 0x11, 0x11), Color(0x11, 0x11, 0x11)
 };
+
+Color getColor() {
+    
+}
+
+bool render_background() {
+    uint8_t background_render = (ppu_regs.ppu_mask & 0b00001000) >> 3;
+    return background_render;
+}
 
 uint16_t mirror_vram_addr(uint16_t addr) {
     if (mirroring == HORIZONTAL) {
@@ -107,11 +122,6 @@ uint8_t vblank() {
     return ppu_regs.ppu_status >> 7;
 }
 
-uint16_t tall_sprites() {
-    return ppu_regs.ppu_ctrl & 0b100000;
-}
-
-
 uint16_t fine_y() {
     return (ppu_internals.v & 0b111000000000000) >> 12;
 }
@@ -130,6 +140,10 @@ uint16_t coarse_y() {
 
 uint16_t coarse_x() {
     return ppu_internals.v & 0b11111;
+}
+
+uint8_t tall_sprites() {
+    return ppu_regs.ppu_ctrl & 0b100000;
 }
 
 void sprite_evaluation() {
@@ -177,9 +191,58 @@ void sprite_evaluation() {
                 }
             }
         } else if (257 <= ppuCycles && ppuCycles <= 320) {
-            
+            if ((ppuCycles & 0b111) == 0b000) {
+                // fetch sprite tile data
+                // TODO implement palette (bits 1-0 of attribute byte)
+                uint8_t secondary_index = (ppuCycles - 264) >> 8;
+                uint8_t attributes = oam_secondary[4 * secondary_index + 2];
+                uint16_t tile_index = oam_secondary[4 * secondary_index + 1];
+                uint16_t y_index = (oam_secondary[4 * secondary_index] - scanline);  
+                if (tall_sprites()) { 
+                    tile_index = (((tile_index & 0b1) << 7) | (tile_index >> 1)) << 7;                
+                    if (attributes & 0b10000000) {
+                        // vertical flip
+                        y_index = 16 - y_index;
+                    }
+                } else {
+                    tile_index = (((uint16_t) (ppu_regs.ppu_ctrl & 0b1000)) << 11) | (((uint16_t) attributes) << 6);
+                    if (attributes & 0b10000000) {
+                        // vertical flip
+                        y_index = 16 - y_index;
+                    }
+                }
+                for (uint8_t i = 0; i < 8; i++) {
+                    if (attributes & 0b1000000) {
+                    // horizontal flip
+                    ppu_read(tile_index | y_index | (7 - i));
+                } else {
+                    ppu_read(tile_index | y_index | i);
+                }
+            }
         }
     }
+}
+
+void update_shift() {
+    shift_pattern_low = (shift_pattern_low & 0xFF00) | tile_low;
+    shift_pattern_high = (shift_pattern_high & 0xFF00) | tile_high;
+    if (attribute & 0b01) {
+        shift_attribute_low = (shift_attribute_low & 0xFF00) | 0xFF;
+    }
+    else {
+        shift_attribute_low = shift_attribute_low & 0xFF00;
+    }
+
+    if (attribute & 0b10) {
+        shift_attribute_high = (shift_attribute_high & 0xFF00) | 0xFF;
+    }
+    else {
+        shift_attribute_high = shift_attribute_high & 0xFF00;
+    }
+}
+
+void shift_left() {
+    shift_pattern_low = shift_pattern_low << 1;
 }
 
 void ppu_cycle() {
@@ -193,10 +256,11 @@ void ppu_cycle() {
             ppu_regs.ppu_status = ppu_regs.ppu_status & 0b01111111;
         }
 
-        if ((ppuCycles >= 1 && ppuCycles < 257) || (ppuCycles >= 321 && ppuCycles < 337)) {
+        if ((ppuCycles >= 2 && ppuCycles < 258) || (ppuCycles >= 321 && ppuCycles < 338)) {
             uint16_t background;
             switch ((ppuCycles - 1) % 8) {
                 case 0:
+                    update_shift();
                     name_table = ppu_read(0x2000 | (ppu_internals.v & 0x0FFF));
                     break;
                 case 2: 
@@ -219,7 +283,7 @@ void ppu_cycle() {
                     break;
                 case 6:
                     background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
-                    tile_low = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y() + 8));
+                    tile_high = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y() + 8));
                     break;
                 case 7:
                     if (coarse_x() == 31) {
@@ -233,6 +297,26 @@ void ppu_cycle() {
                     }
                     break;
             }
+        }
+
+
+        // draw pixels
+        uint8_t pixel;
+        uint8_t palette;
+        
+        if (render_background()) {
+            uint16_t rendered_bit = 0x8000 >> ppu_internals.x;
+            uint8_t pixel_low = (shift_pattern_low & rendered_bit) >> (15 - ppu_internals.x);
+            uint8_t pixel_high = (shift_pattern_high & rendered_bit) >> (15 - ppu_internals.x);
+            pixel = (pixel_high << 1) | pixel_low;
+
+            uint8_t palette_low = (shift_attribute_low & rendered_bit) >> (15 - ppu_internals.x);
+            uint8_t palette_high = (shift_attribute_high & rendered_bit) >> (15 - ppu_internals.x);
+            palette = (palette_high << 1) | palette_low;
+
+            // parameters for pixel coloring: cycle - 1, scanline, and color obtained from 
+            // pixel and palette
+            
         }
 
         // scroll down 1 line
@@ -260,9 +344,27 @@ void ppu_cycle() {
             }
         }
 
+        // reset x value
         if (ppuCycles == 257) {
-            
+            uint8_t coarseX_t = ppu_internals.t & 0x1F;
+            ppu_internals.v = (ppu_internals.v & 0xFFE0) | coarseX_t;
+            uint16_t nametableX_t = ppu_internals.t & 0x400;
+            ppu_internals.v = (ppu_internals.v & 0xFBFF) | nametableX_t;
         }
+
+        // redundant nametable fetch
+        if (ppuCycles == 338 || ppuCycles == 340) {
+            name_table = ppu_read(0x2000 | (ppu_internals.v & 0x0FFF));
+        }
+    }
+
+    // updating vertical information for internal v
+    if (scanline == -1 && ppuCycles >= 280 && ppuCycles < 305) {
+        uint16_t fineY_T = ppu_internals.t & 0b111000000000000; 
+        uint16_t nametableY_t = ppu_internals.t & 0b100000000000;
+        uint16_t coarseY_t = ppu_internals.t & 0b1111100000;
+        ppu_internals.v = (ppu_internals.v & 0b0000010000011111) |  fineY_T
+        | nametableY_t | coarseY_t;
     }
 
     if (scanline == 241 && ppuCycles == 1) {
