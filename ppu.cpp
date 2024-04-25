@@ -1,15 +1,18 @@
 #include "system_vars.h"
 #include "ppu.h"
+#include "vidya.h"
 #include <tuple>
 #include <array>
 
 PPU_EXTERNAL_REGS ppu_regs;
 PPU_INTERNAL_REGS ppu_internals;
 
-uint8_t palette_table[32];
+uint8_t palette_table[0x40];
 uint8_t vram[2048];
 uint8_t oam_data[256];
 uint8_t oam_secondary[32];
+uint8_t sprite_xes[8];
+uint8_t sprite_attributes[8];
 uint8_t sprite_tile_data[8][8];
 bool odd_frame = false;
 
@@ -147,6 +150,7 @@ uint8_t tall_sprites() {
 }
 
 void sprite_evaluation() {
+    // TODO handle sprite 0 hit
     if (0 <= scanline && scanline < 240) {
         // sprite evaluation
         if (1 <= ppuCycles && ppuCycles <= 64) {
@@ -226,6 +230,32 @@ void sprite_evaluation() {
     }
 }
 
+// uint8_t sprite_pixel() {
+//     uint16_t current_x = ppuCycles - 1;
+//     uint8_t using_sprite = 8;
+//     uint8_t diff;
+//     for (uint8_t i = 0; i < 8; i++) {
+//         uint8_t diff = current_x - sprite_xes[i];
+//         if (diff < 8) {
+//             using_sprite = i;
+//             break;
+//         }
+//     }
+//     if (using_sprite < 8) {
+//         return 0;
+//     } else {
+//         return 0;
+//     }
+// }
+
+// uint8_t choose_sprite_pixel() {
+//     if () {
+//         return 0;
+//     } else () {
+//         return 1;
+//     }
+// }
+
 void update_shift() {
     shift_pattern_low = (shift_pattern_low & 0xFF00) | tile_low;
     shift_pattern_high = (shift_pattern_high & 0xFF00) | tile_high;
@@ -250,16 +280,19 @@ void shift_left() {
 
 void ppu_cycle() {
 
-    sprite_evaluation();
+    // sprite_evaluation();
 
     if (scanline >= -1 && scanline < 240) {
-        
+        if (scanline ==0 && ppuCycles == 0) {
+            ppuCycles = 1;
+        }
 
         if (scanline == -1 && ppuCycles == 1) {
             ppu_regs.ppu_status = ppu_regs.ppu_status & 0b01111111;
         }
 
         if ((ppuCycles >= 2 && ppuCycles < 258) || (ppuCycles >= 321 && ppuCycles < 338)) {
+            shift_left();
             uint16_t background;
             switch ((ppuCycles - 1) % 8) {
                 case 0:
@@ -301,27 +334,6 @@ void ppu_cycle() {
                     break;
             }
         }
-
-
-        // draw pixels
-        uint8_t pixel;
-        uint8_t palette;
-        
-        if (render_background()) {
-            uint16_t rendered_bit = 0x8000 >> ppu_internals.x;
-            uint8_t pixel_low = (shift_pattern_low & rendered_bit) >> (15 - ppu_internals.x);
-            uint8_t pixel_high = (shift_pattern_high & rendered_bit) >> (15 - ppu_internals.x);
-            pixel = (pixel_high << 1) | pixel_low;
-
-            uint8_t palette_low = (shift_attribute_low & rendered_bit) >> (15 - ppu_internals.x);
-            uint8_t palette_high = (shift_attribute_high & rendered_bit) >> (15 - ppu_internals.x);
-            palette = (palette_high << 1) | palette_low;
-
-            // parameters for pixel coloring: cycle - 1, scanline, and color obtained from 
-            // pixel and palette
-            
-        }
-
         // scroll down 1 line
         if (ppuCycles == 256) {
             uint16_t fineY = fine_y();
@@ -349,6 +361,7 @@ void ppu_cycle() {
 
         // reset x value
         if (ppuCycles == 257) {
+            update_shift();
             uint8_t coarseX_t = ppu_internals.t & 0x1F;
             ppu_internals.v = (ppu_internals.v & 0xFFE0) | coarseX_t;
             uint16_t nametableX_t = ppu_internals.t & 0x400;
@@ -359,16 +372,16 @@ void ppu_cycle() {
         if (ppuCycles == 338 || ppuCycles == 340) {
             name_table = ppu_read(0x2000 | (ppu_internals.v & 0x0FFF));
         }
+        if (scanline == -1 && ppuCycles >= 280 && ppuCycles < 305) {
+            uint16_t fineY_T = ppu_internals.t & 0b111000000000000; 
+            uint16_t nametableY_t = ppu_internals.t & 0b100000000000;
+            uint16_t coarseY_t = ppu_internals.t & 0b1111100000;
+            ppu_internals.v = (ppu_internals.v & 0b0000010000011111) |  fineY_T
+            | nametableY_t | coarseY_t;
+        }
     }
 
     // updating vertical information for internal v
-    if (scanline == -1 && ppuCycles >= 280 && ppuCycles < 305) {
-        uint16_t fineY_T = ppu_internals.t & 0b111000000000000; 
-        uint16_t nametableY_t = ppu_internals.t & 0b100000000000;
-        uint16_t coarseY_t = ppu_internals.t & 0b1111100000;
-        ppu_internals.v = (ppu_internals.v & 0b0000010000011111) |  fineY_T
-        | nametableY_t | coarseY_t;
-    }
 
     if (scanline == 241 && ppuCycles == 1) {
         if (vblank_nmi()) {
@@ -377,19 +390,35 @@ void ppu_cycle() {
         }
     }
 
-    if (ppuCycles == 340 || (odd_frame && ppuCycles == 339 && scanline == -1)) {
-        ppuCycles = 0;
-        sprites = 0;
-        sprite_index_in_oam_data = 0;
-        byte_of_sprite = 0;
-        if (scanline == 260) {
+
+    // draw pixels
+    uint8_t pixel;
+    uint8_t palette;
+    
+    if (render_background()) {
+        uint16_t rendered_bit = 0x8000 >> ppu_internals.x;
+        uint8_t pixel_low = (shift_pattern_low & rendered_bit) >> (15 - ppu_internals.x);
+        uint8_t pixel_high = (shift_pattern_high & rendered_bit) >> (15 - ppu_internals.x);
+        pixel = (pixel_high << 1) | pixel_low;
+
+        uint8_t palette_low = (shift_attribute_low & rendered_bit) >> (15 - ppu_internals.x);
+        uint8_t palette_high = (shift_attribute_high & rendered_bit) >> (15 - ppu_internals.x);
+        palette = (palette_high << 1) | palette_low;
+    }
+
+    uint8_t paletteChoice = ppu_read(0x3F00 + (palette << 2) + pixel);
+    Color pixelColor = SYSTEM_PALETTE[paletteChoice];
+    image_buffer[ppuCycles - 1][scanline] = pixelColor;
+
+    ppuCycles++;
+
+    if (ppuCycles == 341) {
+        ppuCycles == 0;
+        scanline++;
+        if (scanline == 261) {
             scanline = -1;
-            odd_frame = !odd_frame;
-        } else {
-            scanline++;
+            draw_window();
         }
-    } else {
-        ppuCycles++;
     }
 }
 
