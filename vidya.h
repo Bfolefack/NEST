@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 
 const int SCREEN_WIDTH = 256;
 const int SCREEN_HEIGHT = 240;
