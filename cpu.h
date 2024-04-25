@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include <map>
+
 class CPU {
 public:
     CPU();
@@ -88,10 +90,13 @@ public:
     uint8_t data = 0;
     uint8_t cycles = 0;
 
+    bool complete();
+    std::map<uint16_t, std::string> disassemble(uint16_t nStart, uint16_t nStop);
+
 private:
     const uint16_t STACK_BASE = 0x0100;
     const uint16_t PC_START = 0xFFFC;
-    const uint16_t SP_START = 0xFF;
+    const uint16_t SP_START = 0xFD;
     const uint16_t IRQ_ADDR = 0xFFFE;
     const uint16_t NMI_ADDR = 0xFFFA;
     const int RESET_CYCLES = 8;

@@ -38,19 +38,18 @@ void CPU::push(uint8_t value) {
 
 void CPU::pullFlags() {
     uint8_t flags = pull();
-    regs.flags.C = flags >> 7;
-    regs.flags.Z = flags >> 6;
-    regs.flags.I = flags >> 5;
-    regs.flags.D = flags >> 4;
-    regs.flags.B = flags >> 3;
-    regs.flags.X = flags >> 2;
-    regs.flags.V = flags >> 1;
-    regs.flags.N = flags >> 0;
+    regs.flags.N = (flags >> 7) & 1;
+    regs.flags.V = (flags >> 6) & 1;
+    regs.flags.D = (flags >> 3) & 1;
+    regs.flags.I = (flags >> 2) & 1;
+    regs.flags.Z = (flags >> 1) & 1;
+    regs.flags.C = (flags >> 0) & 1;
 }
 
 void CPU::pushFlags() {
-    uint8_t flags = (regs.flags.C << 7) | (regs.flags.Z << 6) | (regs.flags.I << 5) | (regs.flags.D << 4) |
-                    (regs.flags.B << 3) | (regs.flags.X << 2) | (regs.flags.V << 1) | (regs.flags.N << 0);
+    regs.flags.X = 1;
+    uint8_t flags = (regs.flags.N << 7) | (regs.flags.V << 6) | (regs.flags.X << 5) | (regs.flags.B << 4) |
+                    (regs.flags.D << 3) | (regs.flags.I << 2) | (regs.flags.Z << 1) | (regs.flags.C << 0);
     push(flags);
 }
 
@@ -121,6 +120,7 @@ void CPU::interruptRequest() {
     push(regs.PC >> 8);
     push(regs.PC);
     regs.flags.B = 0;
+    regs.flags.X = 1;
     regs.flags.I = 1;
     pushFlags();
 
@@ -137,6 +137,7 @@ void CPU::nonmaskableInterrupt() {
     push(regs.PC >> 8);
     push(regs.PC);
     regs.flags.B = 0;
+    regs.flags.X = 1;
     regs.flags.I = 1;
     pushFlags();
 
@@ -171,14 +172,14 @@ bool CPU::ZPG() {
 }
 
 bool CPU::ZPX() {
-    absolute_addr = read(regs.PC) + regs.X;
+    absolute_addr = (read(regs.PC) + regs.X) & 0x00FF;
     regs.PC++;
     data = read(absolute_addr);
     return 0;
 }
 
 bool CPU::ZPY() {
-    absolute_addr = read(regs.PC) + regs.Y;
+    absolute_addr = (read(regs.PC) + regs.Y) & 0x00FF;
     regs.PC++;
     data = read(absolute_addr);
     return 0;
@@ -261,8 +262,8 @@ bool CPU::IND() {
 bool CPU::IDX() {
     uint8_t addr = read(regs.PC);
     regs.PC++;
-    uint8_t lo = read(addr + regs.X);
-    uint8_t hi = read(addr + regs.X + 1);
+    uint8_t lo = read((addr + regs.X) & 0x00FF);
+    uint8_t hi = read((addr + regs.X + 1) & 0x00FF);
     absolute_addr = (((uint16_t) hi) << 8) | lo;
     data = read(absolute_addr);
     return 0;
@@ -272,7 +273,7 @@ bool CPU::IDY() {
     uint8_t addr = read(regs.PC);
     regs.PC++;
     uint8_t lo = read(addr);
-    uint8_t hi = read(addr + 1);
+    uint8_t hi = read((addr + 1) & 0x00FF);
     absolute_addr = ((((uint16_t) hi) << 8) | lo) + regs.Y;
     data = read(absolute_addr);
 
@@ -363,9 +364,9 @@ bool CPU::BEQ() {
 }
 
 bool CPU::BIT() {
-    regs.flags.N = (data >> 6) & 1;
+    regs.flags.N = data >> 7;
     regs.flags.Z = (regs.A & data) == 0;
-    regs.flags.V = (data >> 5) & 1;
+    regs.flags.V = (data >> 6) & 1;
     return 0;
 }
 
@@ -478,21 +479,24 @@ bool CPU::CLV() {
 }
 
 bool CPU::CMP() {
-    regs.flags.N = ((regs.A - data) >> 7) == 1;
+    uint8_t result = regs.A - data;
+    regs.flags.N = (result >> 7) == 1;
     regs.flags.Z = regs.A == data;
     regs.flags.C = regs.A >= data;
     return 1;
 }
 
 bool CPU::CPX() {
-    regs.flags.N = ((regs.X - data) >> 7) == 1;
+    uint8_t result = regs.X - data;
+    regs.flags.N = (result >> 7) == 1;
     regs.flags.Z = regs.X == data;
     regs.flags.C = regs.X >= data;
     return 0;
 }
 
 bool CPU::CPY() {
-    regs.flags.N = ((regs.Y - data) >> 7) == 1;
+    uint8_t result = regs.Y - data;
+    regs.flags.N = (result >> 7) == 1;
     regs.flags.Z = regs.Y == data;
     regs.flags.C = regs.Y >= data;
     return 0;
@@ -676,11 +680,12 @@ bool CPU::RTS() {
 }
 
 bool CPU::SBC() {
-    uint16_t result = (uint16_t) regs.A + (uint16_t) (~data) + (uint16_t) regs.flags.C;
+    uint16_t value = ~data & 0x00FF;
+    uint16_t result = (uint16_t) regs.A + value + (uint16_t) regs.flags.C;
     regs.flags.N = ((result >> 7) & 1) == 1;
     regs.flags.Z = (result & 0x00FF) == 0;
     regs.flags.C = (result >> 8) == 1;
-    regs.flags.V = ((regs.A >> 7) == (data >> 7)) && ((regs.A >> 7) != ((result >> 7) & 1));
+    regs.flags.V = ((regs.A >> 7) == (value >> 7) & 1) && ((regs.A >> 7) != ((result >> 7) & 1));
     regs.A = result;
     return 1;
 }
@@ -757,4 +762,130 @@ bool CPU::TYA() {
 
 bool CPU::XXX() {
     return 0;
+}
+
+bool CPU::complete()
+{
+	return cycles == 0;
+}
+
+std::map<uint16_t, std::string> CPU::disassemble(uint16_t nStart, uint16_t nStop)
+{
+	uint32_t addr = nStart;
+	uint8_t value = 0x00, lo = 0x00, hi = 0x00;
+	std::map<uint16_t, std::string> mapLines;
+	uint16_t line_addr = 0;
+
+	// A convenient utility to convert variables into
+	// hex strings because "modern C++"'s method with 
+	// streams is atrocious
+	auto hex = [](uint32_t n, uint8_t d)
+	{
+		std::string s(d, '0');
+		for (int i = d - 1; i >= 0; i--, n >>= 4)
+			s[i] = "0123456789ABCDEF"[n & 0xF];
+		return s;
+	};
+
+	// Starting at the specified address we read an instruction
+	// byte, which in turn yields information from the op_table table
+	// as to how many additional bytes we need to read and what the
+	// addressing mode is. I need this info to assemble human readable
+	// syntax, which is different depending upon the addressing mode
+
+	// As the instruction is decoded, a std::string is assembled
+	// with the readable output
+	while (addr <= (uint32_t)nStop)
+	{
+		line_addr = addr;
+
+		// Prefix line with instruction address
+		std::string sInst = "$" + hex(addr, 4) + ": ";
+
+		// Read instruction, and get its readable name
+		uint8_t opcode = read(addr); addr++;
+		sInst += op_table[opcode].name + " ";
+
+		// Get oprands from desired locations, and form the
+		// instruction based upon its addressing mode. These
+		// routines mimmick the actual fetch routine of the
+		// 6502 in order to get accurate data as part of the
+		// instruction
+		if (op_table[opcode].mode == &CPU::IMP)
+		{
+			sInst += " {IMP}";
+		}
+		else if (op_table[opcode].mode == &CPU::IMM)
+		{
+			value = read(addr); addr++;
+			sInst += "#$" + hex(value, 2) + " {IMM}";
+		}
+		else if (op_table[opcode].mode == &CPU::ZPG)
+		{
+			lo = read(addr); addr++;
+			hi = 0x00;												
+			sInst += "$" + hex(lo, 2) + " {ZPG}";
+		}
+		else if (op_table[opcode].mode == &CPU::ZPX)
+		{
+			lo = read(addr); addr++;
+			hi = 0x00;														
+			sInst += "$" + hex(lo, 2) + ", X {ZPX}";
+		}
+		else if (op_table[opcode].mode == &CPU::ZPY)
+		{
+			lo = read(addr); addr++;
+			hi = 0x00;														
+			sInst += "$" + hex(lo, 2) + ", Y {ZPY}";
+		}
+		else if (op_table[opcode].mode == &CPU::INX)
+		{
+			lo = read(addr); addr++;
+			hi = 0x00;								
+			sInst += "($" + hex(lo, 2) + ", X) {INX}";
+		}
+		else if (op_table[opcode].mode == &CPU::INY)
+		{
+			lo = read(addr); addr++;
+			hi = 0x00;								
+			sInst += "($" + hex(lo, 2) + "), Y {INY}";
+		}
+		else if (op_table[opcode].mode == &CPU::ABS)
+		{
+			lo = read(addr); addr++;
+			hi = read(addr); addr++;
+			sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + " {ABS}";
+		}
+		else if (op_table[opcode].mode == &CPU::ABX)
+		{
+			lo = read(addr); addr++;
+			hi = read(addr); addr++;
+			sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", X {ABX}";
+		}
+		else if (op_table[opcode].mode == &CPU::ABY)
+		{
+			lo = read(addr); addr++;
+			hi = read(addr); addr++;
+			sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", Y {ABY}";
+		}
+		else if (op_table[opcode].mode == &CPU::IND)
+		{
+			lo = read(addr); addr++;
+			hi = read(addr); addr++;
+			sInst += "($" + hex((uint16_t)(hi << 8) | lo, 4) + ") {IND}";
+		}
+		else if (op_table[opcode].mode == &CPU::REL)
+		{
+			value = read(addr); addr++;
+			sInst += "$" + hex(value, 2) + " [$" + hex(addr + value, 4) + "] {REL}";
+		}
+
+		// Add the formed string to a std::map, using the instruction's
+		// address as the key. This makes it convenient to look for later
+		// as the instructions are variable in length, so a straight up
+		// incremental index is not sufficient.
+		mapLines[line_addr] = sInst;
+	}
+
+	return mapLines;
 }
