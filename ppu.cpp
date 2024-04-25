@@ -61,6 +61,11 @@ bool render_background() {
     return background_render;
 }
 
+bool render_sprites() {
+    uint8_t sprite_render = (ppu_regs.ppu_mask & 0b00010000) >> 4;
+    return sprite_render;
+}
+
 uint16_t mirror_vram_addr(uint16_t addr) {
     if (mirroring == HORIZONTAL) {
         if (addr >= 0x2400 && addr < 0x2800) {
@@ -230,30 +235,30 @@ void sprite_evaluation() {
     }
 }
 
-// uint8_t sprite_pixel() {
-//     uint16_t current_x = ppuCycles - 1;
-//     uint8_t using_sprite = 8;
-//     uint8_t diff;
-//     for (uint8_t i = 0; i < 8; i++) {
-//         uint8_t diff = current_x - sprite_xes[i];
-//         if (diff < 8) {
-//             using_sprite = i;
-//             break;
-//         }
-//     }
-//     if (using_sprite < 8) {
-//         return 0;
-//     } else {
-//         return 0;
-//     }
-// }
+uint8_t sprite_pixel() {
+    uint16_t current_x = ppuCycles - 1;
+    uint8_t using_sprite = 8;
+    uint8_t diff;
+    for (uint8_t i = 0; i < 8; i++) {
+        uint8_t diff = current_x - sprite_xes[i];
+        if (diff < 8) {
+            using_sprite = i;
+            break;
+        }
+    }
+    if (using_sprite < 8) {
+        return 0;
+    } else {
+        return 0;
+    }
+}
 
-// uint8_t choose_sprite_pixel() {
-//     if () {
-//         return 0;
-//     } else () {
-//         return 1;
-//     }
+// uint8_t choose_pixel(uint8_t sprite_pixel, uint8_t bg_pixel) {
+//     if (!render_sprites()) {
+//         return background_pixel;
+//     } else if (!render_background()) {
+//         return (1 << 4) | sprite_pixel;
+//     } else if () {
 // }
 
 void update_shift() {
@@ -283,7 +288,7 @@ void ppu_cycle() {
     // sprite_evaluation();
 
     if (scanline >= -1 && scanline < 240) {
-        if (scanline ==0 && ppuCycles == 0) {
+        if (scanline == 0 && ppuCycles == 0) {
             ppuCycles = 1;
         }
 
@@ -408,7 +413,10 @@ void ppu_cycle() {
 
     uint8_t paletteChoice = ppu_read(0x3F00 + (palette << 2) + pixel);
     Color pixelColor = SYSTEM_PALETTE[paletteChoice];
-    image_buffer[ppuCycles - 1][scanline] = pixelColor;
+    if (ppuCycles < 257 && scanline < 240) {
+        image_buffer[scanline][ppuCycles] = pixelColor;
+    }
+
 
     ppuCycles++;
 
