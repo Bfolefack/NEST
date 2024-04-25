@@ -15,11 +15,7 @@ uint8_t data_buffer;
 uint8_t read(uint16_t address) {
     if (address < 0x2000) {
         address = address % 0x0800;
-        if (address < 0x00FF) {
-            return 0;
-        } else {
-            return memory[address];
-        }
+        return memory[address];
     } else if (address < 0x4000) {
         address = address % 0x0008;
         uint8_t temp;
@@ -99,11 +95,7 @@ uint8_t read(uint16_t address) {
 void write(uint16_t address, uint8_t data) {
     if (address < 0x2000) {
         address = address % 0x0800;
-        if (address < 0x00FF) {
-            return; // writing to zero page is meaningless
-        } else {
-            memory[address] = data;
-        }
+        memory[address] = data;
     } else if (address < 0x4000) {
         address = address % 0x0008;
         uint8_t temp;
