@@ -10,7 +10,7 @@ uint8_t palette_table[32];
 uint8_t vram[2048];
 uint8_t oam_data[256];
 uint8_t oam_secondary[32];
-uint8_t sprite_tile_data[8];
+uint8_t sprite_tile_data[8][8];
 bool odd_frame = false;
 
 using Color = std::tuple<uint8_t, uint8_t, uint8_t>;
@@ -53,10 +53,6 @@ const std::array<Color, 64> SYSTEM_PALETTE = {
     Color(0x99, 0xFF, 0xFC), Color(0xDD, 0xDD, 0xDD), Color(0x11, 0x11, 0x11), Color(0x11, 0x11, 0x11)
 };
 
-Color getColor() {
-    
-}
-
 bool render_background() {
     uint8_t background_render = (ppu_regs.ppu_mask & 0b00001000) >> 3;
     return background_render;
@@ -92,8 +88,10 @@ void ppu_write(uint16_t addr, uint8_t data) {
         // write VRAM
     }
     else if (0x3F00 <= addr && addr <= 0x3FFF) {
+        if (addr & 0b11 == 0) { // mirroring
+            addr %= 0x10;
+        }
         palette_table[addr % 0x20] = data;
-
         // read from palette table
     }
 }
@@ -106,8 +104,10 @@ uint8_t ppu_read(uint16_t addr) {
         return vram[mirror_vram_addr(addr)];
         // read from VRAM
     } else if (0x3F00 <= addr && addr <= 0x3FFF) {
+        if (addr & 0b11 == 0) {  // mirroring
+            addr %= 0x10;
+        }
         return palette_table[addr % 0x20];
-
         // read from palette table
     } else {
         return 0; // unreachable
@@ -193,30 +193,29 @@ void sprite_evaluation() {
         } else if (257 <= ppuCycles && ppuCycles <= 320) {
             if ((ppuCycles & 0b111) == 0b000) {
                 // fetch sprite tile data
-                // TODO implement palette (bits 1-0 of attribute byte)
                 uint8_t secondary_index = (ppuCycles - 264) >> 8;
                 uint8_t attributes = oam_secondary[4 * secondary_index + 2];
                 uint16_t tile_index = oam_secondary[4 * secondary_index + 1];
-                uint16_t y_index = (oam_secondary[4 * secondary_index] - scanline);  
+                uint16_t y_index = (scanline - oam_secondary[4 * secondary_index]); 
                 if (tall_sprites()) { 
-                    tile_index = (((tile_index & 0b1) << 7) | (tile_index >> 1)) << 7;                
-                    if (attributes & 0b10000000) {
-                        // vertical flip
+                    tile_index = (((tile_index & 0b1) << 7) | (tile_index >> 1)) << 5;        
+                    if (attributes & 0b10000000) { // vertical flip
                         y_index = 16 - y_index;
                     }
                 } else {
-                    tile_index = (((uint16_t) (ppu_regs.ppu_ctrl & 0b1000)) << 11) | (((uint16_t) attributes) << 6);
-                    if (attributes & 0b10000000) {
-                        // vertical flip
-                        y_index = 16 - y_index;
+                    tile_index = (((uint16_t) (ppu_regs.ppu_ctrl & 0b1000)) << 9) | (tile_index << 4);
+                    if (attributes & 0b10000000) { // vertical flip
+                        y_index = 8 - y_index;
                     }
                 }
-                for (uint8_t i = 0; i < 8; i++) {
-                    if (attributes & 0b1000000) {
-                    // horizontal flip
-                    ppu_read(tile_index | y_index | (7 - i));
+                uint8_t plane_0 = ppu_read(tile_index | (y_index << 4) | 0b0);
+                uint8_t plane_1 = ppu_read(tile_index | (y_index << 4) | 0b1);
+                if (attributes & 0b1000000) { // horizontal flip
+                    for (uint8_t i = 0; i < 8; i++) {
+                        uint16_t index = ppu_read((plane_0 & (1 << i)) >> (i - 1)) | ((plane_1 & (1 << i)) >> i);
+                    }
                 } else {
-                    ppu_read(tile_index | y_index | i);
+                    
                 }
             }
         }
