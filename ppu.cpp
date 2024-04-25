@@ -235,30 +235,38 @@ void sprite_evaluation() {
     }
 }
 
-uint8_t sprite_pixel() {
-    uint16_t current_x = ppuCycles - 1;
-    uint8_t using_sprite = 8;
-    uint8_t diff;
-    for (uint8_t i = 0; i < 8; i++) {
-        uint8_t diff = current_x - sprite_xes[i];
-        if (diff < 8) {
-            using_sprite = i;
-            break;
-        }
-    }
-    if (using_sprite < 8) {
-        return 0;
-    } else {
-        return 0;
-    }
-}
-
+// uint8_t sprite_pixel() {
+    // uint16_t current_x = ppuCycles - 1;
+    // uint8_t using_sprite = 8;
+    // uint8_t diff;
+    // for (uint8_t i = 0; i < 8; i++) {
+        // uint8_t diff = current_x - sprite_xes[i];
+        // if (diff < 8) {
+            // using_sprite = i;
+            // break;
+        // }
+    // }
+    // if (using_sprite < 8) {
+        // return sprite_tile_data[using_sprite][diff];
+    // } else {
+        // return 0;
+    // }
+// }
+// 
 // uint8_t choose_pixel(uint8_t sprite_pixel, uint8_t bg_pixel) {
-//     if (!render_sprites()) {
-//         return background_pixel;
-//     } else if (!render_background()) {
-//         return (1 << 4) | sprite_pixel;
-//     } else if () {
+    // if (!render_sprites()) {
+        // return bg_pixel;
+    // } else if (!render_background()) {
+        // return (1 << 4) | sprite_pixel;
+    // } else if ((sprite_pixel & 0b11) == 0b00) {
+        // return bg_pixel;
+    // } else if ((bg_pixel & 0b11) == 0b00) {
+        // return (1 << 4) | sprite_pixel;
+    // } else if () {
+// 
+    // } else {
+// 
+    // }
 // }
 
 void update_shift() {
