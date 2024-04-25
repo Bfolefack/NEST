@@ -38,19 +38,18 @@ void CPU::push(uint8_t value) {
 
 void CPU::pullFlags() {
     uint8_t flags = pull();
-    regs.flags.C = flags >> 7;
-    regs.flags.Z = flags >> 6;
-    regs.flags.I = flags >> 5;
-    regs.flags.D = flags >> 4;
-    regs.flags.B = flags >> 3;
-    regs.flags.X = flags >> 2;
-    regs.flags.V = flags >> 1;
-    regs.flags.N = flags >> 0;
+    regs.flags.N = (flags >> 7) & 1;
+    regs.flags.V = (flags >> 6) & 1;
+    regs.flags.D = (flags >> 3) & 1;
+    regs.flags.I = (flags >> 2) & 1;
+    regs.flags.Z = (flags >> 1) & 1;
+    regs.flags.C = (flags >> 0) & 1;
 }
 
 void CPU::pushFlags() {
-    uint8_t flags = (regs.flags.C << 7) | (regs.flags.Z << 6) | (regs.flags.I << 5) | (regs.flags.D << 4) |
-                    (regs.flags.B << 3) | (regs.flags.X << 2) | (regs.flags.V << 1) | (regs.flags.N << 0);
+    regs.flags.X = 1;
+    uint8_t flags = (regs.flags.N << 7) | (regs.flags.V << 6) | (regs.flags.X << 5) | (regs.flags.B << 4) |
+                    (regs.flags.D << 3) | (regs.flags.I << 2) | (regs.flags.Z << 1) | (regs.flags.C << 0);
     push(flags);
 }
 
@@ -121,6 +120,7 @@ void CPU::interruptRequest() {
     push(regs.PC >> 8);
     push(regs.PC);
     regs.flags.B = 0;
+    regs.flags.X = 1;
     regs.flags.I = 1;
     pushFlags();
 
@@ -137,6 +137,7 @@ void CPU::nonmaskableInterrupt() {
     push(regs.PC >> 8);
     push(regs.PC);
     regs.flags.B = 0;
+    regs.flags.X = 1;
     regs.flags.I = 1;
     pushFlags();
 
@@ -171,14 +172,14 @@ bool CPU::ZPG() {
 }
 
 bool CPU::ZPX() {
-    absolute_addr = read(regs.PC) + regs.X;
+    absolute_addr = (read(regs.PC) + regs.X) & 0x00FF;
     regs.PC++;
     data = read(absolute_addr);
     return 0;
 }
 
 bool CPU::ZPY() {
-    absolute_addr = read(regs.PC) + regs.Y;
+    absolute_addr = (read(regs.PC) + regs.Y) & 0x00FF;
     regs.PC++;
     data = read(absolute_addr);
     return 0;
@@ -261,8 +262,8 @@ bool CPU::IND() {
 bool CPU::IDX() {
     uint8_t addr = read(regs.PC);
     regs.PC++;
-    uint8_t lo = read(addr + regs.X);
-    uint8_t hi = read(addr + regs.X + 1);
+    uint8_t lo = read((addr + regs.X) & 0x00FF);
+    uint8_t hi = read((addr + regs.X + 1) & 0x00FF);
     absolute_addr = (((uint16_t) hi) << 8) | lo;
     data = read(absolute_addr);
     return 0;
@@ -272,7 +273,7 @@ bool CPU::IDY() {
     uint8_t addr = read(regs.PC);
     regs.PC++;
     uint8_t lo = read(addr);
-    uint8_t hi = read(addr + 1);
+    uint8_t hi = read((addr + 1) & 0x00FF);
     absolute_addr = ((((uint16_t) hi) << 8) | lo) + regs.Y;
     data = read(absolute_addr);
 
@@ -363,9 +364,9 @@ bool CPU::BEQ() {
 }
 
 bool CPU::BIT() {
-    regs.flags.N = (data >> 6) & 1;
+    regs.flags.N = data >> 7;
     regs.flags.Z = (regs.A & data) == 0;
-    regs.flags.V = (data >> 5) & 1;
+    regs.flags.V = (data >> 6) & 1;
     return 0;
 }
 
@@ -478,21 +479,24 @@ bool CPU::CLV() {
 }
 
 bool CPU::CMP() {
-    regs.flags.N = ((regs.A - data) >> 7) == 1;
+    uint8_t result = regs.A - data;
+    regs.flags.N = (result >> 7) == 1;
     regs.flags.Z = regs.A == data;
     regs.flags.C = regs.A >= data;
     return 1;
 }
 
 bool CPU::CPX() {
-    regs.flags.N = ((regs.X - data) >> 7) == 1;
+    uint8_t result = regs.X - data;
+    regs.flags.N = (result >> 7) == 1;
     regs.flags.Z = regs.X == data;
     regs.flags.C = regs.X >= data;
     return 0;
 }
 
 bool CPU::CPY() {
-    regs.flags.N = ((regs.Y - data) >> 7) == 1;
+    uint8_t result = regs.Y - data;
+    regs.flags.N = (result >> 7) == 1;
     regs.flags.Z = regs.Y == data;
     regs.flags.C = regs.Y >= data;
     return 0;
@@ -676,11 +680,12 @@ bool CPU::RTS() {
 }
 
 bool CPU::SBC() {
-    uint16_t result = (uint16_t) regs.A + (uint16_t) (~data) + (uint16_t) regs.flags.C;
+    uint16_t value = ~data & 0x00FF;
+    uint16_t result = (uint16_t) regs.A + value + (uint16_t) regs.flags.C;
     regs.flags.N = ((result >> 7) & 1) == 1;
     regs.flags.Z = (result & 0x00FF) == 0;
     regs.flags.C = (result >> 8) == 1;
-    regs.flags.V = ((regs.A >> 7) == (data >> 7)) && ((regs.A >> 7) != ((result >> 7) & 1));
+    regs.flags.V = ((regs.A >> 7) == (value >> 7) & 1) && ((regs.A >> 7) != ((result >> 7) & 1));
     regs.A = result;
     return 1;
 }
