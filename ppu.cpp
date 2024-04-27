@@ -293,7 +293,7 @@ void shift_left() {
 
 void ppu_cycle() {
 
-    // sprite_evaluation();
+    sprite_evaluation();
 
     if (scanline >= -1 && scanline < 240) {
         if (scanline == 0 && ppuCycles == 0) {
@@ -419,12 +419,11 @@ void ppu_cycle() {
         palette = (palette_high << 1) | palette_low;
     }
 
-    uint8_t paletteChoice = ppu_read(0x3F00 + (palette << 2) + pixel);
-    Color pixelColor = SYSTEM_PALETTE[paletteChoice];
-    if (ppuCycles < 257 && scanline < 240) {
+    uint8_t paletteChoice = choose_pixel(sprite_pixel(), (palette << 2) + pixel);
+    Color pixelColor = SYSTEM_PALETTE[ppu_read(0x3F00 | paletteChoice) % 4];
+    if (ppuCycles < 256 && scanline < 240 && scanline >= 0) {
         image_buffer[scanline][ppuCycles] = pixelColor;
     }
-
 
     ppuCycles++;
 
