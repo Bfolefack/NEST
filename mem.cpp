@@ -141,7 +141,7 @@ void write(uint16_t address, uint8_t data) {
                     ppu_internals.v = ppu_internals.t;
                 }
                 else {
-                    ppu_internals.t = (ppu_internals.t & 0xFF) | (data << 8);
+                    ppu_internals.t = (((uint16_t)(data & 0x3F)) << 8) | (ppu_internals.t & 0xFF);
                 }
                 ppu_internals.w = !ppu_internals.w;
                 return;

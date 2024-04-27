@@ -7,7 +7,7 @@
 PPU_EXTERNAL_REGS ppu_regs;
 PPU_INTERNAL_REGS ppu_internals;
 
-uint8_t palette_table[0x40];
+uint8_t palette_table[32];
 uint8_t vram[2048];
 uint8_t oam_data[256];
 uint8_t oam_secondary[32];
@@ -96,10 +96,11 @@ void ppu_write(uint16_t addr, uint8_t data) {
         // write VRAM
     }
     else if (0x3F00 <= addr && addr <= 0x3FFF) {
+        addr = addr & 0x1F;
         if (addr & 0b11 == 0) { // mirroring
-            addr %= 0x10;
+            addr = addr & 0xF;
         }
-        palette_table[addr % 0x20] = data;
+        palette_table[addr] = data;
         // read from palette table
     }
 }
@@ -112,11 +113,11 @@ uint8_t ppu_read(uint16_t addr) {
         return vram[mirror_vram_addr(addr)];
         // read from VRAM
     } else if (0x3F00 <= addr && addr <= 0x3FFF) {
-        if (addr & 0b11 == 0) {  // mirroring
-            addr %= 0x10;
+        addr = addr & 0x1F;
+        if ((addr & 0b11) == 0) {
+            addr = addr & 0xF;
         }
-        return palette_table[addr % 0x20];
-        // read from palette table
+        return palette_table[addr];
     } else {
         return 0; // unreachable
     }
@@ -397,8 +398,8 @@ void ppu_cycle() {
     // updating vertical information for internal v
 
     if (scanline == 241 && ppuCycles == 1) {
+        ppu_regs.ppu_status = ppu_regs.ppu_status | 0b10000000;
         if (vblank_nmi()) {
-            ppu_regs.ppu_status = ppu_regs.ppu_status | 0b10000000;
             cpu.nonmaskableInterrupt();
         }
     }
