@@ -429,7 +429,7 @@ void ppu_cycle() {
     ppuCycles++;
 
     if (ppuCycles == 341) {
-        ppuCycles == 0;
+        ppuCycles = 0;
         scanline++;
         if (scanline == 261) {
             scanline = -1;
