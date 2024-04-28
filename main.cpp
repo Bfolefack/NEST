@@ -33,9 +33,6 @@ int main (int argc, char** argv, char** envp) {
         ppu_cycle();
         ppu_cycle();
         cpu.clock();
-        if (cpu.cycles == 0) {
-            printf("%x\n", cpu.regs.PC);
-        }
         cycle_number++; 
         // if (cycle_number % 0x100 == 0x0) {
         //     test();
