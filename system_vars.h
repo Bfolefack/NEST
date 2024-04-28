@@ -10,7 +10,7 @@ typedef enum Mirror_Type {
 } Mirror_Type;
 
 extern CPU cpu;
-extern bool tas_input;
+extern bool use_tas_input;
 
 extern uint8_t memory[0x800];
 extern uint8_t prg_ram[0x2000];

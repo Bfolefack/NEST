@@ -10,7 +10,7 @@
 
 uint64_t cycle_number;
 CPU cpu;
-bool tas_input;
+bool use_tas_input;
 
 int main (int argc, char** argv, char** envp) {
     if (argc < 2) {
@@ -22,11 +22,11 @@ int main (int argc, char** argv, char** envp) {
     load_nes(argv[1]);
     
     if (argc > 2) {
-        tas_input = true;
+        use_tas_input = true;
         load_tas(argv[2]);
     }
     else {
-        tas_input = false;
+        use_tas_input = false;
     }
 
     if (mapper != 0) {
