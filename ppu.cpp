@@ -336,50 +336,56 @@ void ppu_cycle() {
                     tile_high = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y() + 8));
                     break;
                 case 7:
-                    if (coarse_x() == 31) {
-                        ppu_internals.v = ppu_internals.v & 0xFFE0; // reset coarse x to 0
-                        uint16_t inverse_name_table_x = ~nametable_x();
-                        inverse_name_table_x =  inverse_name_table_x << 10;
-                        ppu_internals.v = (ppu_internals.v & 0b111101111111111) | inverse_name_table_x; 
+                    if (render_background() || render_sprites()) {
+                        if (coarse_x() == 31) {
+                            ppu_internals.v = ppu_internals.v & 0xFFE0; // reset coarse x to 0
+                            uint16_t inverse_name_table_x = ~nametable_x();
+                            inverse_name_table_x =  inverse_name_table_x << 10;
+                            ppu_internals.v = (ppu_internals.v & 0b111101111111111) | inverse_name_table_x; 
+                        }
+                        else {
+                            ppu_internals.v++;
+                        }
+                        break;
                     }
-                    else {
-                        ppu_internals.v++;
-                    }
-                    break;
             }
         }
         // scroll down 1 line
         if (ppuCycles == 256) {
-            uint16_t fineY = fine_y();
-            if (fineY < 7) {
-                fineY++;
-                fineY = fineY << 12;
-                ppu_internals.v = (ppu_internals.v & 0xFFF) | fineY;
-            }
-            else {
-                ppu_internals.v = (ppu_internals.v & 0xFFF);
-                uint16_t coarseY = coarse_y();
-                if (coarseY < 29) {
-                    coarseY++;
+            if (render_background() || render_sprites()) {
+                uint16_t fineY = fine_y();
+                if (fineY < 7) {
+                    fineY++;
+                    fineY = fineY << 12;
+                    ppu_internals.v = (ppu_internals.v & 0xFFF) | fineY;
                 }
                 else {
-                    coarseY = 0;
-                    uint16_t inverse_name_table_y = ~nametable_y();
-                    inverse_name_table_y =  inverse_name_table_y << 11;
-                    ppu_internals.v = (ppu_internals.v & 0b111011111111111) | inverse_name_table_y; 
-                }
-                coarseY = coarseY << 5;
-                ppu_internals.v = (ppu_internals.v & 0b111110000011111) | coarseY;
+                    ppu_internals.v = (ppu_internals.v & 0xFFF);
+                    uint16_t coarseY = coarse_y();
+                    if (coarseY < 29) {
+                        coarseY++;
+                    }
+                    else {
+                        coarseY = 0;
+                        uint16_t inverse_name_table_y = ~nametable_y();
+                        inverse_name_table_y =  inverse_name_table_y << 11;
+                        ppu_internals.v = (ppu_internals.v & 0b111011111111111) | inverse_name_table_y; 
+                    }
+                    coarseY = coarseY << 5;
+                    ppu_internals.v = (ppu_internals.v & 0b111110000011111) | coarseY;
+                }        
             }
         }
 
         // reset x value
         if (ppuCycles == 257) {
             update_shift();
-            uint8_t coarseX_t = ppu_internals.t & 0x1F;
-            ppu_internals.v = (ppu_internals.v & 0xFFE0) | coarseX_t;
-            uint16_t nametableX_t = ppu_internals.t & 0x400;
-            ppu_internals.v = (ppu_internals.v & 0xFBFF) | nametableX_t;
+            if (render_background() || render_sprites()) {
+                uint8_t coarseX_t = ppu_internals.t & 0x1F;
+                ppu_internals.v = (ppu_internals.v & 0xFFE0) | coarseX_t;
+                uint16_t nametableX_t = ppu_internals.t & 0x400;
+                ppu_internals.v = (ppu_internals.v & 0xFBFF) | nametableX_t;
+            }
         }
 
         // redundant nametable fetch
@@ -387,11 +393,13 @@ void ppu_cycle() {
             name_table = ppu_read(0x2000 | (ppu_internals.v & 0x0FFF));
         }
         if (scanline == -1 && ppuCycles >= 280 && ppuCycles < 305) {
-            uint16_t fineY_T = ppu_internals.t & 0b111000000000000; 
-            uint16_t nametableY_t = ppu_internals.t & 0b100000000000;
-            uint16_t coarseY_t = ppu_internals.t & 0b1111100000;
-            ppu_internals.v = (ppu_internals.v & 0b0000010000011111) |  fineY_T
-            | nametableY_t | coarseY_t;
+            if (render_background() || render_sprites()) {
+                uint16_t fineY_T = ppu_internals.t & 0b111000000000000; 
+                uint16_t nametableY_t = ppu_internals.t & 0b100000000000;
+                uint16_t coarseY_t = ppu_internals.t & 0b1111100000;
+                ppu_internals.v = (ppu_internals.v & 0b0000010000011111) |  fineY_T
+                | nametableY_t | coarseY_t;
+            } 
         }
     }
 
