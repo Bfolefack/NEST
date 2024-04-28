@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "system_vars.h"
 #include "loadnes.h"
+#include "loadtas.h"
 #include "cpu.h"
 #include "ppu.h"
 #include "test.h"
@@ -9,6 +10,7 @@
 
 uint64_t cycle_number;
 CPU cpu;
+bool tas_input;
 
 int main (int argc, char** argv, char** envp) {
     if (argc < 2) {
@@ -18,6 +20,14 @@ int main (int argc, char** argv, char** envp) {
 
     init_SDL();
     load_nes(argv[1]);
+    
+    if (argc > 2) {
+        tas_input = true;
+        load_tas(argv[2]);
+    }
+    else {
+        tas_input = false;
+    }
 
     if (mapper != 0) {
         printf("Unsupported mapper %hhu", mapper);
