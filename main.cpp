@@ -8,7 +8,8 @@
 #include "test.h"
 #include "vidya.h"
 
-uint64_t cycle_number;
+uint64_t cycle_number = 0;
+uint64_t frame_number = 0;
 CPU cpu;
 bool use_tas_input;
 
@@ -40,6 +41,12 @@ int main (int argc, char** argv, char** envp) {
     while (1) {
         if(cycle_number % 0x100)
             refresh_window();
+        if (0 /* is_frame */) {
+            if (use_tas_input) {
+                P1_joypad.input.button_register = tas_inputs[frame_number];
+            }
+            frame_number++;
+        }
         ppu_cycle();
         ppu_cycle();
         ppu_cycle();

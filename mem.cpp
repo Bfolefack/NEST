@@ -54,21 +54,21 @@ uint8_t read(uint16_t address) {
             switch ((uint8_t) P1_joypad.btn_pointer)
             {
             case 0:
-                response = P1_joypad.A;
+                response = P1_joypad.input.buttons.A;
             case 1:
-                response = P1_joypad.B;
+                response = P1_joypad.input.buttons.B;
             case 2:
-                response = P1_joypad.SELECT;
+                response = P1_joypad.input.buttons.SELECT;
             case 3:
-                response = P1_joypad.START;
+                response = P1_joypad.input.buttons.START;
             case 4:
-                response = P1_joypad.UP;
+                response = P1_joypad.input.buttons.UP;
             case 5:
-                response = P1_joypad.DOWN;
+                response = P1_joypad.input.buttons.DOWN;
             case 6:
-                response = P1_joypad.LEFT;
+                response = P1_joypad.input.buttons.LEFT;
             case 7:
-                response = P1_joypad.RIGHT;
+                response = P1_joypad.input.buttons.RIGHT;
             }
             if (!P1_joypad.strobe && P1_joypad.btn_pointer < 8) {
                 P1_joypad.btn_pointer++;

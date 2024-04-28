@@ -2,12 +2,13 @@
 #include "system_vars.h"
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
 
-std::vector<int> tas_inputs;
+std::vector<uint8_t> tas_inputs;
 
 void load_tas(std::string filename) {
     std::ifstream file;
@@ -19,36 +20,45 @@ void load_tas(std::string filename) {
     }
     while (file.good()) {
         std::getline(file, input_line);
-        if (input_line == "A") {
-            tas_inputs.push_back(0);
+
+        std::stringstream input_line_stream(input_line);
+        std::string input;
+        std::vector<std::string> input_list;
+        uint8_t input_value = 0;
+
+        while(std::getline(input_line_stream, input, ' '))
+        {
+            if (input == "A") {
+                input_value += 1 << 0;
+            }
+            else if (input == "B") {
+                input_value += 1 << 1;
+            }
+            else if (input == "SELECT") {
+                input_value += 1 << 2;
+            }
+            else if (input == "START") {
+                input_value += 1 << 3;
+            }
+            else if (input == "UP") {
+                input_value += 1 << 4;
+            }
+            else if (input == "DOWN") {
+                input_value += 1 << 5;
+            }
+            else if (input == "LEFT") {
+                input_value += 1 << 6;
+            }
+            else if (input == "RIGHT") {
+                input_value += 1 << 7;
+            }
+            else {
+                std::cout << "TAS input \'" << input_line <<  "\' not recognized";
+                exit(1);
+            }
         }
-        else if (input_line == "B") {
-            tas_inputs.push_back(1);
-        }
-        else if (input_line == "SELECT") {
-            tas_inputs.push_back(2);
-        }
-        else if (input_line == "START") {
-            tas_inputs.push_back(3);
-        }
-        else if (input_line == "UP") {
-            tas_inputs.push_back(4);
-        }
-        else if (input_line == "DOWN") {
-            tas_inputs.push_back(5);
-        }
-        else if (input_line == "LEFT") {
-            tas_inputs.push_back(6);
-        }
-        else if (input_line == "RIGHT") {
-            tas_inputs.push_back(7);
-        }
-        else {
-            std::cout << "TAS input \'" << input_line <<  "\' not recognized";
-            exit(1);
-        }
-        
-        std::cout << input_line << '\n';
+
+        tas_inputs.push_back(input_value);
 
         if (file.eof()) {
             break;

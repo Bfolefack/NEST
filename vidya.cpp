@@ -37,28 +37,28 @@ void refresh_window(){
                     exit(0);
                     break;
                 case SDLK_w: // UP
-                    P1_joypad.UP = 1;
+                    P1_joypad.input.buttons.UP = 1;
                     break;
                 case SDLK_a: // LEFT
-                    P1_joypad.LEFT = 1;
+                    P1_joypad.input.buttons.LEFT = 1;
                     break;
                 case SDLK_s: // DOWN
-                    P1_joypad.DOWN = 1;
+                    P1_joypad.input.buttons.DOWN = 1;
                     break;
                 case SDLK_d: // RIGHT
-                    P1_joypad.RIGHT = 1;
+                    P1_joypad.input.buttons.RIGHT = 1;
                     break;
                 case SDLK_LSHIFT: // B
-                    P1_joypad.B = 1;
+                    P1_joypad.input.buttons.B = 1;
                     break;
                 case SDLK_SPACE: // A
-                    P1_joypad.A = 1;
+                    P1_joypad.input.buttons.A = 1;
                     break;
                 case SDLK_RETURN: // START
-                    P1_joypad.START = 1;
+                    P1_joypad.input.buttons.START = 1;
                     break;
                 case SDLK_RSHIFT: // SELECT
-                    P1_joypad.SELECT = 1;
+                    P1_joypad.input.buttons.SELECT = 1;
                     break;
                 case SDLK_DELETE: // RESET
                     cpu.reset();
