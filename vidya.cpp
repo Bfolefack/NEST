@@ -73,7 +73,7 @@ void draw_window(){
     SDL_FillRect(screenSurface, NULL, SDL_MapRGB(screenSurface->format, 0x00, 0x00, 0x00));
     for(int y = 0; y < SCREEN_HEIGHT; y++){
         for(int x = 0; x < SCREEN_WIDTH; x++){
-            SDL_Rect rect = {x, y, 1, 1};
+            SDL_Rect rect = {x * PIXELS_PER_PIXEL, y * PIXELS_PER_PIXEL, PIXELS_PER_PIXEL, PIXELS_PER_PIXEL};
             SDL_FillRect(screenSurface, &rect, SDL_MapRGB(screenSurface->format, std::get<0>(image_buffer[y][x]), std::get<1>(image_buffer[y][x]), std::get<2>(image_buffer[y][x])));
         }
     }

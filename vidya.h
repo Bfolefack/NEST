@@ -1,8 +1,10 @@
 #pragma once
 #include <cstdint>
 
-const int SCREEN_WIDTH = 256;
-const int SCREEN_HEIGHT = 240;
+
+const int PIXELS_PER_PIXEL = 3;
+const int SCREEN_WIDTH = 256 * PIXELS_PER_PIXEL;
+const int SCREEN_HEIGHT = 240 * PIXELS_PER_PIXEL;
 
 
 typedef struct Joypad {
