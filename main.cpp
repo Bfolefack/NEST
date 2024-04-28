@@ -28,7 +28,8 @@ int main (int argc, char** argv, char** envp) {
     cycle_number = 0;
 
     while (1) {
-        refresh_window();
+        if(cycle_number % 0x100)
+            refresh_window();
         ppu_cycle();
         ppu_cycle();
         ppu_cycle();
