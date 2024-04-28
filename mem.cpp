@@ -102,7 +102,6 @@ void write(uint16_t address, uint8_t data) {
         switch (address) {
             case 2:
                 perror("Cannot write to read-only register");
-                exit(3);
             case 0: 
                 temp = ppu_regs.ppu_ctrl;
                 ppu_regs.ppu_ctrl = data;

@@ -23,5 +23,6 @@ extern uint8_t inst_rom[0x2000];
 extern uint8_t prom[0x20];
 
 extern Mirror_Type mirroring;
+extern uint8_t mapper;
 
 #endif

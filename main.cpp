@@ -8,7 +8,7 @@
 #include "vidya.h"
 
 uint64_t cycle_number;
-CPU cpu= CPU();
+CPU cpu = CPU();
 
 int main (int argc, char** argv, char** envp) {
     if (argc < 2) {
@@ -18,6 +18,11 @@ int main (int argc, char** argv, char** envp) {
 
     init_SDL();
     load_nes(argv[1]);
+
+    if (mapper != 0) {
+        printf("Unsupported mapper %hhu", mapper);
+        exit(2);
+    }
 
     cycle_number = 0;
 

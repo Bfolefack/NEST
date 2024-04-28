@@ -25,6 +25,7 @@ uint8_t inst_rom[0x2000];
 uint8_t prom[0x20];
 
 Mirror_Type mirroring;
+uint8_t mapper;
 
 void load_nes(char* filename) {
     FILE* file = fopen(filename, "rb");
@@ -75,4 +76,6 @@ void load_nes(char* filename) {
     } else {
         mirroring = VERTICAL;
     }
+
+    mapper = (flags_7 & 0b11110000) | (flags_6 >> 4);
 }
