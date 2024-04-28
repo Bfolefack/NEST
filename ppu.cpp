@@ -336,7 +336,7 @@ void ppu_cycle() {
                     break;
                 case 6:
                     background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
-                    tile_high = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y() + 8));
+                    tile_high = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y() + 1));
                     break;
                 case 7:
                     if (render_background() || render_sprites()) {
@@ -433,7 +433,7 @@ void ppu_cycle() {
     }
 
     uint8_t paletteChoice = choose_pixel(sprite_pixel(), (palette << 2) + pixel);
-    Color pixelColor = SYSTEM_PALETTE[ppu_read(0x3F00 | paletteChoice) % 64];
+    Color pixelColor = SYSTEM_PALETTE[ppu_read(0x3F00 | paletteChoice)];
     if (ppuCycles < 256 && scanline < 240 && scanline >= 0) {
         image_buffer[scanline][ppuCycles] = pixelColor;
     }
