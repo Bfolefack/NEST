@@ -53,7 +53,7 @@ void load_tas(std::string filename) {
                 input_value += 1 << 7;
             }
             else {
-                std::cout << "TAS input \'" << input_line <<  "\' not recognized";
+                std::cout << "TAS input \'" << input <<  "\' not recognized";
                 exit(1);
             }
         }
