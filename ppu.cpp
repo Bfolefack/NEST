@@ -20,6 +20,9 @@ using Color = std::tuple<uint8_t, uint8_t, uint8_t>;
 uint16_t ppuCycles = 0;
 int16_t scanline = 0;
 
+bool sprite_0_used;
+bool sprite_0_in_next_scanline;
+bool sprite_0_in_scanline;
 uint8_t sprites;
 uint8_t oam_read;
 uint8_t sprite_index_in_oam_data;
@@ -156,7 +159,6 @@ uint8_t tall_sprites() {
 }
 
 void sprite_evaluation() {
-    // TODO handle sprite 0 hit
     if (0 <= scanline && scanline < 240) {
         // sprite evaluation
         if (1 <= ppuCycles && ppuCycles <= 64) {
@@ -170,9 +172,9 @@ void sprite_evaluation() {
                 oam_read = oam_data[sprite_index_in_oam_data * 4 + byte_of_sprite];
             } else if (sprite_index_in_oam_data < 64) {
                 if (sprites >= 8) {
-                    if (scanline >= oam_read && (scanline < oam_read + 8 || tall_sprites() && scanline < oam_read + 16)) {
+                    if (scanline >= oam_read && (scanline < oam_read + 8 || (tall_sprites() && scanline < oam_read + 16))) {
                         sprite_index_in_oam_data = 64; // stop sprite evaluation this scanline
-                        //TODO handle overflow in registers
+                        ppu_regs.ppu_status |= 0b00100000;
                     } else {
                         sprite_index_in_oam_data++;
                         // bug in original hardware that some games rely on
@@ -186,6 +188,9 @@ void sprite_evaluation() {
                     if (scanline >= oam_read && (scanline < oam_read + 8 || tall_sprites() && scanline < oam_read + 16)) {
                         oam_secondary[sprites * 4 + byte_of_sprite] = oam_read;
                         byte_of_sprite++;
+                        if (sprite_index_in_oam_data == 0) {
+                            sprite_0_in_next_scanline = true;
+                        }
                     } else {
                         sprite_index_in_oam_data++;
                     }
@@ -238,23 +243,32 @@ void sprite_evaluation() {
 
 uint8_t sprite_pixel() {
     uint16_t current_x = ppuCycles - 1;
-    uint8_t using_sprite = 8;
+    uint8_t used_sprite = 8;
     uint8_t diff;
     for (uint8_t i = 0; i < 8; i++) {
         uint8_t diff = current_x - sprite_xes[i];
         if (diff < 8) {
-            using_sprite = i;
+            used_sprite = i;
             break;
         }
     }
-    if (using_sprite < 8) {
-        return sprite_tile_data[using_sprite][diff] | (sprite_attributes[using_sprite] & 0b100000); // priority flag added for muxing
+    sprite_0_used = (used_sprite == 0) && sprite_0_in_scanline;
+    if (used_sprite < 8) {
+        return sprite_tile_data[used_sprite][diff] | (sprite_attributes[used_sprite] & 0b100000); // priority flag added for muxing
     } else {
-        return 0;
+        return 0; // no sprites hit
     }
 }
 
 uint8_t choose_pixel(uint8_t sprite_pixel, uint8_t bg_pixel) {
+    if (sprite_0_used && render_background() && render_sprites() && ppuCycles != 256) {
+        if (ppuCycles >= 8 || (ppu_regs.ppu_mask & 0b110) == 0b110) {
+            if ((sprite_pixel & 0b11) == 0b00 && (bg_pixel & 0b11) == 0b00) {
+                ppu_regs.ppu_status |= 0b01000000;
+            }
+        }
+    }
+
     if (!render_sprites()) {
         return bg_pixel;
     } else if (!render_background()) {
@@ -305,7 +319,7 @@ void ppu_cycle() {
         }
 
         if (scanline == -1 && ppuCycles == 1) {
-            ppu_regs.ppu_status = ppu_regs.ppu_status & 0b01111111;
+            ppu_regs.ppu_status = ppu_regs.ppu_status & 0b00011111;
         }
 
         if ((ppuCycles >= 2 && ppuCycles < 258) || (ppuCycles >= 321 && ppuCycles < 338)) {
@@ -442,6 +456,8 @@ void ppu_cycle() {
 
     if (ppuCycles == 341) {
         ppuCycles = 0;
+        sprite_0_in_scanline = sprite_0_in_next_scanline;
+        sprite_0_in_next_scanline = false;
         scanline++;
         if (scanline == 261) {
             scanline = -1;
