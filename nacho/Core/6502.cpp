@@ -16,12 +16,11 @@ void CPU6502::step() {
 
     static FILE* out = fopen("nacho.out", "w");
     static int counter = 0;
-    if(counter++ > 100000) {
-        exit(0);
+    if(counter++ < 100000) {
+        fprintf(out, "Cycle: %d\n", counter);
+        fprintf(out, "\tA: %02X\n\tX: %02X\n\tY: %02X\n\tSP: %02X\n\tPC: %04X\n\n", accumulator, xRegister, yRegister, stackPointer, programCounter);
+        fprintf(out, "\tC: %d\n\tZ: %d\n\tI: %d\n\tD: %d\n\tB: %d\n\tX: %d\n\tV: %d\n\tN: %d\n\n\n", (statusRegister >> 0) & 1, (statusRegister >> 1) & 1, (statusRegister >> 2) & 1, (statusRegister >> 3) & 1, (statusRegister >> 4) & 1, (statusRegister >> 5) & 1, (statusRegister >> 6) & 1, (statusRegister >> 7) & 1);
     }
-    fprintf(out, "Cycle: %d\n", counter);
-    fprintf(out, "\tA: %02X\n\tX: %02X\n\tY: %02X\n\tSP: %02X\n\tPC: %04X\n\n", accumulator, xRegister, yRegister, stackPointer, programCounter);
-    fprintf(out, "\tC: %d\n\tZ: %d\n\tI: %d\n\tD: %d\n\tB: %d\n\tX: %d\n\tV: %d\n\tN: %d\n\n\n", (statusRegister >> 0) & 1, (statusRegister >> 1) & 1, (statusRegister >> 2) & 1, (statusRegister >> 3) & 1, (statusRegister >> 4) & 1, (statusRegister >> 5) & 1, (statusRegister >> 6) & 1, (statusRegister >> 7) & 1);
 }
 
 inline void CPU6502::tick() {
