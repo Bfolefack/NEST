@@ -23,3 +23,7 @@ compare:
 all:
 	make compile
 	make compare test=$(test)
+
+run:
+	g++ -I src/include -L src/lib -o nest -g *.cpp -lmingw32 -lSDL2main -lSDL2
+	./nest.exe tests/$(test).nes
