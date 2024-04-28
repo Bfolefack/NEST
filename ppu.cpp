@@ -350,7 +350,7 @@ void ppu_cycle() {
                     break;
                 case 6:
                     background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
-                    tile_high = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y() + 1));
+                    tile_high = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y() + 8));
                     break;
                 case 7:
                     if (render_background() || render_sprites()) {
@@ -361,7 +361,9 @@ void ppu_cycle() {
                             ppu_internals.v = (ppu_internals.v & 0b111101111111111) | inverse_name_table_x; 
                         }
                         else {
-                            ppu_internals.v++;
+                            ppu_internals.v = ppu_internals.v & 0xFFE0;
+                            uint8_t coarseX = coarse_x() + 1;
+                            ppu_internals.v = ppu_internals.v | coarseX;
                         }
                         break;
                     }
