@@ -290,6 +290,9 @@ void update_shift() {
 
 void shift_left() {
     shift_pattern_low = shift_pattern_low << 1;
+    shift_pattern_high = shift_pattern_high << 1;
+    shift_attribute_low = shift_attribute_low << 1;
+    shift_attribute_high = shift_attribute_high << 1;
 }
 
 void ppu_cycle() {
