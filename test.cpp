@@ -27,3 +27,15 @@ void test() {
     }
     
 }
+
+void dump_chr_rom() {
+    
+}
+
+void dump_prg_rom(char* filename) {
+    FILE* file = fopen(filename, "w");
+    if (file == NULL) {printf("q"); exit(3);}
+    for (uint16_t i = 0x8000; i != 0x0; i++) {
+        fprintf(file, "%hx: %02hhx\n", i, read(i));
+    }
+}

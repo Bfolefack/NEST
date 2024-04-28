@@ -441,7 +441,9 @@ void ppu_cycle() {
         scanline++;
         if (scanline == 261) {
             scanline = -1;
-            draw_window();
+            if (ppuCycles == 0) {
+                draw_window();
+            }
         }
     }
 }
