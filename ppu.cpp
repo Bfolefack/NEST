@@ -248,7 +248,7 @@ uint8_t sprite_pixel() {
         }
     }
     if (using_sprite < 8) {
-        return sprite_tile_data[using_sprite][diff] | (sprite_attributes[using_sprite] & 0b100000); // flag added for muxing
+        return sprite_tile_data[using_sprite][diff] | (sprite_attributes[using_sprite] & 0b100000); // priority flag added for muxing
     } else {
         return 0;
     }

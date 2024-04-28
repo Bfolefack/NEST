@@ -53,21 +53,14 @@ void CPU::pushFlags() {
     push(flags);
 }
 
-void CPU::print_regs() {
-    printf("A: %02X, X: %02X, Y: %02X, SP: %02X, PC: %04X\n", regs.A, regs.X, regs.Y, regs.SP, regs.PC);
-    printf("C: %d, Z: %d, I: %d, D: %d, B: %d, X: %d, V: %d, N: %d\n", regs.flags.C, regs.flags.Z, regs.flags.I, regs.flags.D, regs.flags.B, regs.flags.X, regs.flags.V, regs.flags.N);
-
-}
+// void CPU::print_regs() {
+    
+// }
 
 void CPU::clock() {
     if (cycles == 0) {
         // Fetch
         opcode = read(regs.PC); // First byte of instruction
-        //Print pc and opcode
-        // if(regs.PC >> 8 == 0xE0 || regs.PC >> 8 == 0xE4){
-            // printf("\nOpcode: %02X\n", opcode);
-            // print_regs();
-        // }
         regs.PC++;
 
 
@@ -77,6 +70,15 @@ void CPU::clock() {
         // Execute
         bool add_cycle2 = (this->*op_table[opcode].function)();
         cycles = op_table[opcode].cycles + (add_cycle1 && add_cycle2);
+
+        static FILE* out = fopen("nest.out", "w");
+        static int counter = 0;
+        if(counter++ > 100000) {
+            exit(0);
+        }
+        fprintf(out, "Cycle: %d\n", counter);
+        fprintf(out, "\tA: %02X\n\tX: %02X\n\tY: %02X\n\tSP: %02X\n\tPC: %04X\n\n", regs.A, regs.X, regs.Y, regs.SP, regs.PC);
+        fprintf(out, "\tC: %d\n\tZ: %d\n\tI: %d\n\tD: %d\n\tB: %d\n\tX: %d\n\tV: %d\n\tN: %d\n\n\n", regs.flags.C, regs.flags.Z, regs.flags.I, regs.flags.D, regs.flags.B, regs.flags.X, regs.flags.V, regs.flags.N);
     }
 
     cycles--;
