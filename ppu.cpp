@@ -453,7 +453,7 @@ void ppu_cycle() {
 
     ppuCycles++;
 
-    if (ppuCycles == 341 || (odd_frame && scanline == -1 && ppuCycles == 340)) {
+    if (ppuCycles == 341 || (odd_frame && scanline == -1 && ppuCycles == 340 && (render_background() || render_sprites()))) {
         ppuCycles = 0;
         sprite_0_in_scanline = sprite_0_in_next_scanline;
         sprite_0_in_next_scanline = false;
