@@ -3,6 +3,7 @@ debug:
 
 clean:
 	-rm *.exe
+	-rm *.out
 
 sdl:
 	g++ -I src/include -L src/lib -o nest -g *.cpp -lmingw32 -lSDL2main -lSDL2
@@ -28,6 +29,6 @@ run:
 	g++ -I src/include -L src/lib -o nest -g *.cpp -lmingw32 -lSDL2main -lSDL2
 	./nest.exe tests/$(test).nes
 
-nacho:
+run_nacho:
 	g++ -I src/include -L src/lib -o nacho -g nacho/Core/*.cpp nacho/Core/Mapper/*.cpp -lmingw32 -lSDL2main -lSDL2
-	./nest.exe tests/$(test).nes
+	./nacho.exe -insert tests/$(test).nes

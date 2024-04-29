@@ -86,7 +86,7 @@ uint16_t mirror_vram_addr(uint16_t addr) {
         else if (addr >= 0x2C00) {
             return addr - 0x2800;
         }
-        return addr - 0x2800;
+        return addr - 0x2000;
     }
 }
 
