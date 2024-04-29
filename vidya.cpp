@@ -102,21 +102,27 @@ void refresh_window()
                 close_SDL();
                 exit(0);
                 break;
+            case SDLK_UP:
             case SDLK_w: // UP
                 P1_joypad.input.buttons.UP = 1;
                 break;
+            case SDLK_LEFT:
             case SDLK_a: // LEFT
                 P1_joypad.input.buttons.LEFT = 1;
                 break;
+            case SDLK_DOWN:
             case SDLK_s: // DOWN
                 P1_joypad.input.buttons.DOWN = 1;
                 break;
+            case SDLK_RIGHT:
             case SDLK_d: // RIGHT
                 P1_joypad.input.buttons.RIGHT = 1;
                 break;
+            case SDLK_z:
             case SDLK_LSHIFT: // B
                 P1_joypad.input.buttons.B = 1;
                 break;
+            case SDLK_x:
             case SDLK_SPACE: // A
                 P1_joypad.input.buttons.A = 1;
                 break;
