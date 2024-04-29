@@ -46,6 +46,8 @@ uint8_t read(uint16_t address) {
     } else if (address < 0x401F) {
         if (address == 0x4014) {
             return oam_dma_reg;
+        } else if (address == 0x4015){
+            return APU_read();
         }  else if (address == 0x4016) {
             if(P1_joypad.btn_pointer > 7) {
                 return 1;
@@ -167,7 +169,7 @@ void write(uint16_t address, uint8_t data) {
             return;
         } else if (address == 0x4017) {
         }  else {
-            return; // TODO - APU and I/O registers
+            APU_write(address, data);
         }
     } else if (0x6000 <= address && address < 0x8000) {
         prg_ram[address - 0x6000] = data;
