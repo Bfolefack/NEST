@@ -6,7 +6,7 @@ clean:
 	-rm *.out
 
 sdl:
-	g++ -I src/include -L src/lib -o nest -g *.cpp -lmingw32 -lSDL2main -lSDL2
+	g++ -O3 -I src/include -L src/lib -o nest -g *.cpp -lmingw32 -lSDL2main -lSDL2
 
 other:
 	g++ -I src/include -L src/lib -o nacho -g nacho/Core/*.cpp nacho/Core/Mapper/*.cpp -lmingw32 -lSDL2main -lSDL2
