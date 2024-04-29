@@ -209,7 +209,7 @@ void sprite_evaluation() {
         } else if (257 <= ppuCycles && ppuCycles <= 320) {
             if ((ppuCycles & 0b111) == 0b000) {
                 // fetch sprite tile data
-                uint8_t secondary_index = (ppuCycles - 264) % 8;
+                uint8_t secondary_index = (ppuCycles - 264) / 8;
                 uint8_t attributes = oam_secondary[4 * secondary_index + 2];
                 uint16_t tile_index = oam_secondary[4 * secondary_index + 1];
                 uint16_t y_index = (scanline - oam_secondary[4 * secondary_index]);
@@ -257,6 +257,9 @@ uint8_t sprite_pixel() {
     }
     sprite_0_used = (used_sprite == 0) && sprite_0_in_scanline;
     if (used_sprite < 8) {
+        if (sprite_tile_data[used_sprite][diff] & 0b11000000) {
+            printf("holler");
+        }
         return sprite_tile_data[used_sprite][diff];
     } else {
         return 0; // no sprites hit
