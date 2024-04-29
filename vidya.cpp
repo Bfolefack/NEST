@@ -93,7 +93,6 @@ void refresh_window(){
                     cpu.reset();
                     break;
             }
-        
         }
     }
 }

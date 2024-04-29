@@ -164,7 +164,7 @@ void sprite_evaluation() {
             if (ppuCycles & 0b1) {
                 oam_read = 0xFF;
             } else {
-                oam_secondary[(ppuCycles >> 1) & 0x1F] = oam_read;
+                oam_secondary[(ppuCycles >> 1) - 1] = oam_read;
             }
         } else if (65 <= ppuCycles && ppuCycles <= 256) {
             if (sprite_index_in_oam_data < 64) {
