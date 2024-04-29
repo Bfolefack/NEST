@@ -121,32 +121,39 @@ void write(uint16_t address, uint8_t data) {
                 ppu_regs.oam_addr++;
                 return;
             case 5:
-                if (ppu_internals.w) {
-                    uint16_t fine_y = data & 0x07;
-                    ppu_internals.t = (ppu_internals.t & 0b1000111111111111) | (fine_y << 12);
-                    uint16_t coarse_y = data >> 3;
-                    ppu_internals.t = (ppu_internals.t & 0b1111110000011111) | (coarse_y << 5);
+                if (vblank()) {
+                    if (ppu_internals.w) {
+                        uint16_t fine_y = data & 0x07;
+                        ppu_internals.t = (ppu_internals.t & 0b1000111111111111) | (fine_y << 12);
+                        uint16_t coarse_y = data >> 3;
+                        ppu_internals.t = (ppu_internals.t & 0b1111110000011111) | (coarse_y << 5);
+                    }
+                    else {
+                        ppu_internals.x = data & 0x07;
+                        uint16_t coarse_x = data >> 3;
+                        ppu_internals.t = (ppu_internals.t & 0b1111111111100000) | (coarse_x);
+                    }
+                    ppu_internals.w = !ppu_internals.w;
                 }
-                else {
-                    ppu_internals.x = data & 0x07;
-                    uint16_t coarse_x = data >> 3;
-                    ppu_internals.t = (ppu_internals.t & 0b1111111111100000) | (coarse_x);
-                }
-                ppu_internals.w = !ppu_internals.w;
+
                 return;
             case 6:
-                if (ppu_internals.w) {
-                    ppu_internals.t = (ppu_internals.t & 0xFF00) | data;
-                    ppu_internals.v = ppu_internals.t;
+                if (vblank()) {
+                    if (ppu_internals.w) {
+                        ppu_internals.t = (ppu_internals.t & 0xFF00) | data;
+                        ppu_internals.v = ppu_internals.t;
+                    }
+                    else {
+                        ppu_internals.t = (((uint16_t)(data & 0x3F)) << 8) | (ppu_internals.t & 0xFF);
+                    }
+                    ppu_internals.w = !ppu_internals.w;
                 }
-                else {
-                    ppu_internals.t = (((uint16_t)(data & 0x3F)) << 8) | (ppu_internals.t & 0xFF);
-                }
-                ppu_internals.w = !ppu_internals.w;
                 return;
             case 7:
-                ppu_write(ppu_internals.v, data);
-                ppu_internals.v += (ppu_regs.ppu_ctrl & 0b100) ? 32 : 1;
+                if (vblank()) {
+                    ppu_write(ppu_internals.v, data);
+                    ppu_internals.v += (ppu_regs.ppu_ctrl & 0b100) ? 32 : 1;
+                }
                 return;
         }
     } else if (address < 0x401F) {
