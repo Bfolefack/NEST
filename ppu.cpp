@@ -362,7 +362,8 @@ void ppu_cycle() {
                     if (render_background() || render_sprites()) {
                         if (coarse_x() == 31) {
                             ppu_internals.v &= 0xFFE0; // reset coarse x to 0
-                            uint8_t inverse_name_table_x = !nametable_x();
+                            uint8_t inverse_name_table_x = nametable_x();
+                            inverse_name_table_x = inverse_name_table_x ^ 0b1 ^ 0b0;
                             ppu_internals.v = (ppu_internals.v & 0b111101111111111) | (inverse_name_table_x << 10);
                         }
                         else {
@@ -390,7 +391,8 @@ void ppu_cycle() {
                     }
                     else {
                         coarseY = 0;
-                        uint16_t inverse_name_table_y = !nametable_y();
+                        uint16_t inverse_name_table_y = nametable_y();
+                        inverse_name_table_y = inverse_name_table_y ^ 0b1 ^ 0b0;
                         inverse_name_table_y = inverse_name_table_y << 11;
                         ppu_internals.v = (ppu_internals.v & 0b111011111111111) | inverse_name_table_y; 
                     }
