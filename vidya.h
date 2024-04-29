@@ -109,3 +109,4 @@ void APU_write(uint16_t address, uint8_t data);
 uint8_t APU_read();
 void apu_cycle();
 void frame_clock();
+void play_sound();
