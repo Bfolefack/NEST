@@ -11,6 +11,7 @@
 uint8_t memory [0x800];
 uint8_t prg_ram[0x2000];
 uint8_t data_buffer;
+uint8_t oam_dma_reg = 0;
 
 uint8_t read(uint16_t address) {
     if (address < 0x2000) {
@@ -45,7 +46,7 @@ uint8_t read(uint16_t address) {
         }
     } else if (address < 0x401F) {
         if (address == 0x4014) {
-            return 0;
+            return oam_dma_reg;
         }  else if (address == 0x4016) {
             if(P1_joypad.btn_pointer > 7) {
                 return 1;
@@ -151,9 +152,11 @@ void write(uint16_t address, uint8_t data) {
         }
     } else if (address < 0x401F) {
         if (address == 0x4014) {
+            oam_dma_reg = data;
             for (uint16_t i = 0; i < 0x100; i++) {
-                oam_data[i] = memory[0x100 * data + i];
+                oam_data[i] = memory[0x100 * oam_dma_reg + i];
             }
+            cpu.cycles += 513;
             return;
         } else if (address == 0x4016) {
             if (data & 0x01) {

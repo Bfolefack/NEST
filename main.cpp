@@ -14,6 +14,7 @@ CPU cpu;
 std::string output_filename;
 bool use_tas;
 bool create_tas;
+FILE* logfile;
 
 int main (int argc, char** argv, char** envp) {
     if (argc < 2) {
@@ -23,6 +24,7 @@ int main (int argc, char** argv, char** envp) {
 
     init_SDL();
     load_nes(argv[1]);
+    logfile = fopen("log.txt", "w");
     
     if (argc > 2) {
         std::string flag(argv[2]);

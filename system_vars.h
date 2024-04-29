@@ -25,4 +25,6 @@ extern uint8_t prom[0x20];
 extern Mirror_Type mirroring;
 extern uint8_t mapper;
 
+extern FILE* logfile;
+
 #endif

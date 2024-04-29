@@ -90,6 +90,7 @@ uint16_t mirror_vram_addr(uint16_t addr) {
 
 void ppu_write(uint16_t addr, uint8_t data) {
     if (0 <= addr && addr <= 0x1FFF) {
+        printf("Writing to read-only memory.");
         // can't happen
     }
     else if (0x2000 <= addr && addr <= 0x2FFF) {
@@ -98,7 +99,7 @@ void ppu_write(uint16_t addr, uint8_t data) {
     }
     else if (0x3F00 <= addr && addr <= 0x3FFF) {
         addr &= 0x1F;
-        if ((addr & 0b11) == 0) { // mirroring
+        if ((addr & 0b11) == 0b00) { // mirroring
             addr &= 0xF;
         }
         palette_table[addr] = data;
@@ -114,9 +115,9 @@ uint8_t ppu_read(uint16_t addr) {
         return vram[mirror_vram_addr(addr)];
         // read from VRAM
     } else if (0x3F00 <= addr && addr <= 0x3FFF) {
-        addr = addr & 0x1F;
+        addr &= 0x1F;
         if ((addr & 0b11) == 0) {
-            addr = addr & 0xF;
+            addr &= 0xF;
         }
         return palette_table[addr];
     } else {
@@ -294,15 +295,13 @@ void update_shift() {
     shift_pattern_high = (shift_pattern_high & 0xFF00) | tile_high;
     if (attribute & 0b01) {
         shift_attribute_low = (shift_attribute_low & 0xFF00) | 0xFF;
-    }
-    else {
+    } else {
         shift_attribute_low = shift_attribute_low & 0xFF00;
     }
 
     if (attribute & 0b10) {
         shift_attribute_high = (shift_attribute_high & 0xFF00) | 0xFF;
-    }
-    else {
+    } else {
         shift_attribute_high = shift_attribute_high & 0xFF00;
     }
 }
@@ -334,6 +333,11 @@ void ppu_cycle() {
                 case 0:
                     update_shift();
                     name_table = ppu_read(0x2000 | (ppu_internals.v & 0x0FFF));
+                    fprintf(logfile, "ad : %04hx\n", 0x2000 | (ppu_internals.v & 0x0FFF));
+                    fprintf(logfile, "nt :   %02hhx\n", name_table);
+                    fprintf(logfile, "v  : %04hx\n", ppu_internals.v);
+                    fprintf(logfile, "sc :  %03hu\n", scanline);
+                    fprintf(logfile, "cyc:  %03hu\n\n", ppuCycles);
                     break;
                 case 2: 
                     attribute = ppu_read(0x23C0 | (nametable_y() << 11)
@@ -347,7 +351,7 @@ void ppu_cycle() {
                     if (coarse_x() & 0x02) {
                         attribute = attribute >> 2;
                     }
-                    attribute = attribute & 0x03;
+                    attribute &= 0x3;
                     break;
                 case 4: 
                     background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
@@ -365,8 +369,9 @@ void ppu_cycle() {
                         else {
                             ppu_internals.v++; // increment coarse x
                         }
-                        break;
+                        
                     }
+                    break;
             }
         }
         // scroll down 1 line
@@ -375,11 +380,11 @@ void ppu_cycle() {
                 uint16_t fineY = fine_y();
                 if (fineY < 7) {
                     fineY++;
-                    fineY = fineY << 12;
+                    fineY <<= 12;
                     ppu_internals.v = (ppu_internals.v & 0xFFF) | fineY;
                 }
                 else {
-                    ppu_internals.v = (ppu_internals.v & 0xFFF);
+                    ppu_internals.v &= 0xFFF;
                     uint16_t coarseY = coarse_y();
                     if (coarseY < 29) {
                         coarseY++;
@@ -390,7 +395,7 @@ void ppu_cycle() {
                         inverse_name_table_y = inverse_name_table_y << 11;
                         ppu_internals.v = (ppu_internals.v & 0b111011111111111) | inverse_name_table_y; 
                     }
-                    coarseY = coarseY << 5;
+                    coarseY <<= 5;
                     ppu_internals.v = (ppu_internals.v & 0b111110000011111) | coarseY;
                 }        
             }
