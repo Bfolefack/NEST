@@ -40,8 +40,7 @@ uint8_t read(uint16_t address) {
                 if (ppu_internals.v >= 0x3F00) {
                     data = data_buffer;
                 }
-            
-                ppu_internals.v += (ppu_regs.ppu_ctrl & 0b100) ? 32 : 1;
+
                 return data;
         }
     } else if (address < 0x401F) {
