@@ -57,16 +57,18 @@ int main (int argc, char** argv, char** envp) {
 
     cpu.reset();
     cycle_number = 0;
+    int tas_input_index = 0;
 
     while (1) {
         if(cycle_number % 0x100)
             refresh_window();
-        if (cycle_number % 0x10000 /* is_frame */) {
-            if (use_tas) {
-                P1_joypad.input.button_register = tas_inputs[frame_number];
+        if (cycle_number % 0x10000 == 0/* is_frame */) {
+            if (use_tas && tas_input_index < tas_inputs.size() && frame_number == tas_inputs[tas_input_index].first) {
+                P1_joypad.input.button_register = tas_inputs[tas_input_index].second;
+                tas_input_index++;
             }
-            if (create_tas) {
-                tas_inputs.push_back(P1_joypad.input.button_register);
+            if (create_tas && P1_joypad.input.button_register != 0) {
+                tas_inputs.push_back({frame_number, P1_joypad.input.button_register});
             }
             frame_number++;
         }
