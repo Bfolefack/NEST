@@ -60,13 +60,11 @@ const std::array<Color, 64> SYSTEM_PALETTE = {
 };
 
 bool render_background() {
-    uint8_t background_render = (ppu_regs.ppu_mask & 0b00001000) >> 3;
-    return background_render;
+    return (ppu_regs.ppu_mask & 0b00001000) >> 3;
 }
 
 bool render_sprites() {
-    uint8_t sprite_render = (ppu_regs.ppu_mask & 0b00010000) >> 4;
-    return sprite_render;
+    return (ppu_regs.ppu_mask & 0b00010000) >> 4;
 }
 
 uint16_t mirror_vram_addr(uint16_t addr) {
@@ -339,9 +337,9 @@ void ppu_cycle() {
                     break;
                 case 2: 
                     attribute = ppu_read(0x23C0 | (nametable_y() << 11)
-                    | (nametable_x() << 10))
+                    | (nametable_x() << 10)
                     | ((coarse_y() >> 2) << 3)
-                    | (coarse_x() >> 2);
+                    | (coarse_x() >> 2));
 
                     if (coarse_y() & 0x02) {
                         attribute = attribute >> 4;
