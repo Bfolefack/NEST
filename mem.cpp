@@ -155,7 +155,7 @@ void write(uint16_t address, uint8_t data) {
                 oam_data[i] = memory[0x100 * data + i];
             }
             return;
-        }   else if (address == 0x4016) {
+        } else if (address == 0x4016) {
             if (data & 0x01) {
                 P1_joypad.strobe = 1;
                 P1_joypad.btn_pointer = 0;
