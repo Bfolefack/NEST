@@ -57,35 +57,27 @@ uint8_t read(uint16_t address) {
             {
             case 0:
                 response = P1_joypad.input.buttons.A;
-                // P1_joypad.input.buttons.A = 0;
                 break;
             case 1:
                 response = P1_joypad.input.buttons.B;
-                // P1_joypad.input.buttons.B = 0;
                 break;
             case 2:
                 response = P1_joypad.input.buttons.SELECT;
-                // P1_joypad.input.buttons.SELECT = 0;
                 break;
             case 3:
                 response = P1_joypad.input.buttons.START;
-                // P1_joypad.input.buttons.START = 0;
                 break;
             case 4:
                 response = P1_joypad.input.buttons.UP;
-                // P1_joypad.input.buttons.UP = 0;
                 break;
             case 5:
                 response = P1_joypad.input.buttons.DOWN;
-                // P1_joypad.input.buttons.DOWN = 0;
                 break;
             case 6:
                 response = P1_joypad.input.buttons.LEFT;
-                // P1_joypad.input.buttons.LEFT = 0;
                 break;
             case 7:
                 response = P1_joypad.input.buttons.RIGHT;
-                // P1_joypad.input.buttons.RIGHT = 0;
                 break;
             }
             if (!P1_joypad.strobe && P1_joypad.btn_pointer < 8) {
