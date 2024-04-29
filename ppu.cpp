@@ -13,7 +13,6 @@ uint8_t vram[2048];
 uint8_t oam_data[256];
 uint8_t oam_secondary[32];
 uint8_t sprite_xes[8];
-uint8_t sprite_attributes[8];
 uint8_t sprite_tile_data[8][8];
 bool odd_frame = false;
 
@@ -238,12 +237,14 @@ void sprite_evaluation() {
                 if (attributes & 0b1000000) { // horizontal flip
                     for (uint8_t i = 0; i < 8; i++) {
                         uint16_t index = ((plane_0 & (1 << (7 - i))) >> (6 - i)) | ((plane_1 & (7 - i)) >> (7 - i));
-                        sprite_tile_data[secondary_index][i] = ((attributes & 0b11) << 2) | index;
+                        sprite_tile_data[secondary_index][i] = (attributes & 0b100000) | ((attributes & 0b11) << 2) | index;
+                        // priority flag added for muxing
                     }
                 } else {
                     for (uint8_t i = 0; i < 8; i++) {
                         uint16_t index = ((plane_0 & (1 << i)) >> (i - 1)) | ((plane_1 & (1 << i)) >> i);
-                        sprite_tile_data[secondary_index][i] = ((attributes & 0b11) << 2) | index;
+                        sprite_tile_data[secondary_index][i] = (attributes & 0b100000) | ((attributes & 0b11) << 2) | index;
+                        // priority flag added for muxing
                     }
                 }
             }
@@ -252,11 +253,10 @@ void sprite_evaluation() {
 }
 
 uint8_t sprite_pixel() {
-    uint16_t current_x = ppuCycles;
     uint8_t used_sprite = 8;
     int16_t diff;
     for (uint8_t i = 0; i < 8; i++) {
-        diff = current_x - sprite_xes[i];
+        diff = ppuCycles - sprite_xes[i];
         if (diff >= 0 && diff < 8) {
             used_sprite = i;
             break;
@@ -264,7 +264,7 @@ uint8_t sprite_pixel() {
     }
     sprite_0_used = (used_sprite == 0) && sprite_0_in_scanline;
     if (used_sprite < 8) {
-        return sprite_tile_data[used_sprite][diff] | (sprite_attributes[used_sprite] & 0b100000); // priority flag added for muxing
+        return sprite_tile_data[used_sprite][diff];
     } else {
         return 0; // no sprites hit
     }
@@ -282,13 +282,13 @@ uint8_t choose_pixel(uint8_t sprite_pixel, uint8_t bg_pixel) {
     if (!render_sprites()) {
         return bg_pixel;
     } else if (!render_background()) {
-        return (1 << 4) | sprite_pixel;
+        return (1 << 4) | (sprite_pixel & 0b1111);
     } else if ((sprite_pixel & 0b11) == 0b00) {
         return bg_pixel;
     } else if ((bg_pixel & 0b11) == 0b00) {
-        return (1 << 4) | sprite_pixel;
+        return (1 << 4) | (sprite_pixel & 0b1111);
     } else if (sprite_pixel & 0b100000) {
-        return (1 << 4) | sprite_pixel;
+        return (1 << 4) | (sprite_pixel & 0b1111);
     } else {
         return bg_pixel;
     }
