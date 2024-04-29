@@ -281,9 +281,9 @@ uint8_t choose_pixel(uint8_t sprite_pixel, uint8_t bg_pixel) {
     } else if ((bg_pixel & 0b11) == 0b00) {
         return (1 << 4) | (sprite_pixel & 0b1111);
     } else if (sprite_pixel & 0b100000) {
-        return (1 << 4) | (sprite_pixel & 0b1111);
-    } else {
         return bg_pixel;
+    } else {
+        return (1 << 4) | (sprite_pixel & 0b1111);
     }
 }
 
