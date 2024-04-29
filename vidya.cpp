@@ -94,14 +94,14 @@ void refresh_window()
             close_SDL();
             exit(0);
         }
-        else if (event.type == SDL_KEYDOWN)
+        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
+            close_SDL();
+            exit(0);
+        }
+        else if (!use_tas && event.type == SDL_KEYDOWN)
         {
             switch (event.key.keysym.sym)
             {
-            case SDLK_ESCAPE:
-                close_SDL();
-                exit(0);
-                break;
             case SDLK_UP:
             case SDLK_w: // UP
                 P1_joypad.input.buttons.UP = 1;
@@ -137,7 +137,7 @@ void refresh_window()
                 break;
             }
         }
-        else if (event.type == SDL_KEYUP)
+        else if (!use_tas && event.type == SDL_KEYUP)
         {
             switch (event.key.keysym.sym)
             {
