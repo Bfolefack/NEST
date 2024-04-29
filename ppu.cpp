@@ -227,13 +227,13 @@ void sprite_evaluation() {
                 }
                 uint8_t plane_0 = ppu_read(tile_index + ((tall_sprites() && y_index >= 8) << 4) | 0b0000 | (y_index % 8));
                 uint8_t plane_1 = ppu_read(tile_index + ((tall_sprites() && y_index >= 8) << 4) | 0b1000 | (y_index % 8));
-                if (~(attributes & 0b1000000)) { // horizontal flip
+                if (!(attributes & 0b1000000)) {
                     for (uint8_t i = 0; i < 8; i++) {
                         uint16_t index = ((plane_1 & (1 << (7 - i))) >> (6 - i)) | ((plane_0 & (1 << (7 - i))) >> (7 - i));
                         sprite_tile_data[secondary_index][i] = (attributes & 0b100000) | ((attributes & 0b11) << 2) | index;
                         // priority flag added for muxing
                     }
-                } else {
+                } else { // horizontal flip
                     for (uint8_t i = 0; i < 8; i++) {
                         uint16_t index = ((plane_1 & (1 << i)) >> (i - 1)) | ((plane_0 & (1 << i)) >> i);
                         sprite_tile_data[secondary_index][i] = (attributes & 0b100000) | ((attributes & 0b11) << 2) | index;
