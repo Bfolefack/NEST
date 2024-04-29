@@ -62,7 +62,7 @@ int main (int argc, char** argv, char** envp) {
     int tas_input_index = 0;
 
     while (1) {
-        if (cycle_number % 0x10000 == 0/* is_frame */) {
+        if (cycle_number % 29780 == 0) {
             if (use_tas && tas_input_index < tas_inputs.size() && frame_number == tas_inputs[tas_input_index].first) {
                 P1_joypad.input.button_register = tas_inputs[tas_input_index].second;
                 tas_input_index++;
@@ -72,7 +72,7 @@ int main (int argc, char** argv, char** envp) {
             }
             frame_number++;
         }
-        if(cycle_number % 7445 == 0){
+        if (cycle_number % 7445 == 0){
             refresh_window();
             frame_clock();
         }
