@@ -24,7 +24,6 @@ int main (int argc, char** argv, char** envp) {
 
     init_SDL();
     load_nes(argv[1]);
-    logfile = fopen("log.txt", "w");
     
     if (argc > 2) {
         std::string flag(argv[2]);
