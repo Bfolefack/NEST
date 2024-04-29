@@ -366,7 +366,7 @@ void ppu_cycle() {
                 case 7:
                     if (render_background() || render_sprites()) {
                         if (coarse_x() == 31) {
-                            ppu_internals.v = ppu_internals.v & 0xFFE0; // reset coarse x to 0
+                            ppu_internals.v &= 0xFFE0; // reset coarse x to 0
                         }
                         else {
                             ppu_internals.v++; // increment coarse x
