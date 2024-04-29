@@ -27,3 +27,7 @@ all:
 run:
 	g++ -I src/include -L src/lib -o nest -g *.cpp -lmingw32 -lSDL2main -lSDL2
 	./nest.exe tests/$(test).nes
+
+nacho:
+	g++ -I src/include -L src/lib -o nacho -g nacho/Core/*.cpp nacho/Core/Mapper/*.cpp -lmingw32 -lSDL2main -lSDL2
+	./nest.exe tests/$(test).nes
