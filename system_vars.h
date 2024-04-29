@@ -21,6 +21,8 @@ extern uint8_t prg_rom[0x8000];
 extern uint8_t chr_rom[0x2000];
 extern uint8_t inst_rom[0x2000];
 extern uint8_t prom[0x20];
+extern uint8_t oam_data[256];
+extern uint8_t oam_secondary[32];
 
 extern Mirror_Type mirroring;
 extern uint8_t mapper;

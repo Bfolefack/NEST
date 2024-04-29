@@ -1,0 +1,319 @@
+y: 80
+t: 00
+a: 00
+x: 60
+
+y: 78
+t: 03
+a: 01
+x: 60
+
+y: 80
+t: 13
+a: 01
+x: 60
+
+y: 00
+t: ff
+a: 01
+x: 00
+
+y: 00
+t: ff
+a: 20
+x: 00
+
+y: 00
+t: ff
+a: 20
+x: 00
+
+y: 00
+t: ff
+a: 20
+x: 00
+
+y: 00
+t: ff
+a: 20
+x: 00
+
+y: ff
+t: ff
+a: 02
+x: ff
+
+y: ff
+t: ff
+a: 02
+x: ff
+
+y: ff
+t: ff
+a: 02
+x: ff
+
+y: ff
+t: ff
+a: 02
+x: ff
+
+y: ff
+t: ff
+a: 02
+x: ff
+
+y: ff
+t: ff
+a: 02
+x: ff
+
+y: ff
+t: 32
+a: 02
+x: ff
+
+y: ff
+t: 32
+a: 02
+x: ff
+
+y: ff
+t: 32
+a: 02
+x: ff
+
+y: 07
+t: 70
+a: 01
+x: 08
+
+y: 07
+t: 70
+a: 01
+x: 10
+
+y: 07
+t: 70
+a: 01
+x: 18
+
+y: 07
+t: 70
+a: 01
+x: 20
+
+y: 07
+t: 70
+a: 01
+x: 28
+
+y: 07
+t: 70
+a: 01
+x: 30
+
+y: 07
+t: 70
+a: 01
+x: 38
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff
+
+y: ff
+t: ff
+a: ff
+x: ff

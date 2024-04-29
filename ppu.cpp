@@ -1,6 +1,7 @@
 #include "system_vars.h"
 #include "ppu.h"
 #include "vidya.h"
+#include "test.h"
 #include <tuple>
 #include <array>
 
@@ -167,40 +168,49 @@ void sprite_evaluation() {
                 oam_secondary[ppuCycles >> 1] = oam_read;
             }
         } else if (65 <= ppuCycles && ppuCycles <= 256) {
-            if (ppuCycles & 0b1) {
-                oam_read = oam_data[sprite_index_in_oam_data * 4 + byte_of_sprite];
-            } else if (sprite_index_in_oam_data < 64) {
-                if (sprites >= 8) {
-                    if (scanline >= oam_read && (scanline < oam_read + 8 || (tall_sprites() && scanline < oam_read + 16))) {
-                        sprite_index_in_oam_data = 64; // stop sprite evaluation this scanline
-                        ppu_regs.ppu_status |= 0b00100000;
+            if (ppuCycles == 255) {
+                    dump_oam_secondary();
+                    fprintf(logfile, "\nsprites: %hu\n\n", sprites);
+                }
+            if (sprite_index_in_oam_data < 64) {
+                if (ppuCycles & 0b1) {
+                    oam_read = oam_data[sprite_index_in_oam_data * 4 + byte_of_sprite];
+                    if (ppuCycles == 65) {
+                        fprintf(logfile, "\nscanline: %hx\n\n", scanline);
+                    }
+                } else {
+                    if (sprites >= 8) {
+                        if (scanline >= oam_read && (scanline < oam_read + 8 || (tall_sprites() && scanline < oam_read + 16))) {
+                            sprite_index_in_oam_data = 64; // stop sprite evaluation this scanline
+                            ppu_regs.ppu_status |= 0b00100000;
+                        } else {
+                            sprite_index_in_oam_data++;
+                            // bug in original hardware that some games rely on
+                            if (byte_of_sprite == 3) {
+                                byte_of_sprite = 0;
+                            } else {
+                                byte_of_sprite++;
+                            }
+                        }
+                    } else if (byte_of_sprite == 0) {
+                        if (scanline >= oam_read && (scanline < oam_read + 8 || (tall_sprites() && scanline < oam_read + 16))) {
+                            oam_secondary[sprites * 4] = oam_read;
+                            byte_of_sprite++;
+                            if (sprite_index_in_oam_data == 0) {
+                                sprite_0_in_next_scanline = true;
+                            }
+                        } else {
+                            sprite_index_in_oam_data++;
+                        }
                     } else {
-                        sprite_index_in_oam_data++;
-                        // bug in original hardware that some games rely on
+                        oam_secondary[sprites * 4 + byte_of_sprite] = oam_read;
                         if (byte_of_sprite == 3) {
                             byte_of_sprite = 0;
+                            sprite_index_in_oam_data++;
+                            sprites++;
                         } else {
                             byte_of_sprite++;
                         }
-                    }
-                } else if (byte_of_sprite == 0) {
-                    if (scanline >= oam_read && (scanline < oam_read + 8 || tall_sprites() && scanline < oam_read + 16)) {
-                        oam_secondary[sprites * 4 + byte_of_sprite] = oam_read;
-                        byte_of_sprite++;
-                        if (sprite_index_in_oam_data == 0) {
-                            sprite_0_in_next_scanline = true;
-                        }
-                    } else {
-                        sprite_index_in_oam_data++;
-                    }
-                } else {
-                    oam_secondary[sprites * 4 + byte_of_sprite] = oam_read;
-                    if (byte_of_sprite == 3) {
-                        byte_of_sprite = 0;
-                        sprite_index_in_oam_data++;
-                        sprites++;
-                    } else {
-                        byte_of_sprite++;
                     }
                 }
             }
@@ -208,37 +218,32 @@ void sprite_evaluation() {
             if ((ppuCycles & 0b111) == 0b000) {
                 // fetch sprite tile data
                 uint8_t secondary_index = (ppuCycles - 264) % 8;
-                if (sprites > secondary_index) {
-                    uint8_t attributes = oam_secondary[4 * secondary_index + 2];
-                    uint16_t tile_index = oam_secondary[4 * secondary_index + 1];
-                    uint16_t y_index = (scanline - oam_secondary[4 * secondary_index]);
-                    if (tall_sprites()) { 
-                        tile_index = (((tile_index & 0b1) << 7) | (tile_index >> 1)) << 5;        
-                        if (attributes & 0b10000000) { // vertical flip
-                            y_index = 16 - y_index;
-                        }
-                    } else {
-                        tile_index = (((uint16_t) (ppu_regs.ppu_ctrl & 0b1000)) << 9) | (tile_index << 4);
-                        if (attributes & 0b10000000) { // vertical flip
-                            y_index = 8 - y_index;
-                        }
+                uint8_t attributes = oam_secondary[4 * secondary_index + 2];
+                uint16_t tile_index = oam_secondary[4 * secondary_index + 1];
+                uint16_t y_index = (scanline - oam_secondary[4 * secondary_index]);
+                sprite_xes[secondary_index] = oam_secondary[4 * secondary_index + 3];
+                if (tall_sprites()) { 
+                    tile_index = (((tile_index & 0b1) << 7) | (tile_index >> 1)) << 5;        
+                    if (attributes & 0b10000000) { // vertical flip
+                        y_index = 16 - y_index;
                     }
-                    uint8_t plane_0 = ppu_read(tile_index | (y_index << 1) | 0b0);
-                    uint8_t plane_1 = ppu_read(tile_index | (y_index << 1) | 0b1);
-                    if (attributes & 0b1000000) { // horizontal flip
-                        for (uint8_t i = 0; i < 8; i++) {
-                            uint16_t index = ((plane_0 & (1 << (7 - i))) >> (6 - i)) | ((plane_1 & (7 - i)) >> (7 - i));
-                            sprite_tile_data[secondary_index][i] = ppu_read(0x3F10 | ((attributes & 0b11) << 2) | index);
-                        }
-                    } else {
-                        for (uint8_t i = 0; i < 8; i++) {
-                            uint16_t index = ((plane_0 & (1 << i)) >> (i - 1)) | ((plane_1 & (1 << i)) >> i);
-                            sprite_tile_data[secondary_index][i] = ppu_read(0x3F10 | ((attributes & 0b11) << 2) | index);
-                        }
+                } else {
+                    tile_index = (((uint16_t) (ppu_regs.ppu_ctrl & 0b1000)) << 9) | (tile_index << 4);
+                    if (attributes & 0b10000000) { // vertical flip
+                        y_index = 8 - y_index;
+                    }
+                }
+                uint8_t plane_0 = ppu_read(tile_index + ((tall_sprites() && y_index >= 8) << 4) | 0b0000 | (y_index % 8));
+                uint8_t plane_1 = ppu_read(tile_index + ((tall_sprites() && y_index >= 8) << 4) | 0b1000 | (y_index % 8));
+                if (attributes & 0b1000000) { // horizontal flip
+                    for (uint8_t i = 0; i < 8; i++) {
+                        uint16_t index = ((plane_0 & (1 << (7 - i))) >> (6 - i)) | ((plane_1 & (7 - i)) >> (7 - i));
+                        sprite_tile_data[secondary_index][i] = ((attributes & 0b11) << 2) | index;
                     }
                 } else {
                     for (uint8_t i = 0; i < 8; i++) {
-                        sprite_tile_data[secondary_index][i] = 0;
+                        uint16_t index = ((plane_0 & (1 << i)) >> (i - 1)) | ((plane_1 & (1 << i)) >> i);
+                        sprite_tile_data[secondary_index][i] = ((attributes & 0b11) << 2) | index;
                     }
                 }
             }
@@ -247,12 +252,12 @@ void sprite_evaluation() {
 }
 
 uint8_t sprite_pixel() {
-    uint16_t current_x = ppuCycles - 1;
+    uint16_t current_x = ppuCycles;
     uint8_t used_sprite = 8;
-    uint8_t diff;
+    int16_t diff;
     for (uint8_t i = 0; i < 8; i++) {
         diff = current_x - sprite_xes[i];
-        if (diff < 8) {
+        if (diff >= 0 && diff < 8) {
             used_sprite = i;
             break;
         }
@@ -274,20 +279,19 @@ uint8_t choose_pixel(uint8_t sprite_pixel, uint8_t bg_pixel) {
         }
     }
 
-    // if (!render_sprites()) {
-    //     return bg_pixel;
-    // } else if (!render_background()) {
-    //     return (1 << 4) | sprite_pixel;
-    // } else if ((sprite_pixel & 0b11) == 0b00) {
-    //     return bg_pixel;
-    // } else if ((bg_pixel & 0b11) == 0b00) {
-    //     return (1 << 4) | sprite_pixel;
-    // } else if (sprite_pixel & 0b100000) {
-    //     return (1 << 4) | sprite_pixel;
-    // } else {
-    //     return bg_pixel;
-    // }
-    return bg_pixel;
+    if (!render_sprites()) {
+        return bg_pixel;
+    } else if (!render_background()) {
+        return (1 << 4) | sprite_pixel;
+    } else if ((sprite_pixel & 0b11) == 0b00) {
+        return bg_pixel;
+    } else if ((bg_pixel & 0b11) == 0b00) {
+        return (1 << 4) | sprite_pixel;
+    } else if (sprite_pixel & 0b100000) {
+        return (1 << 4) | sprite_pixel;
+    } else {
+        return bg_pixel;
+    }
 }
 
 void update_shift() {
@@ -335,11 +339,6 @@ void ppu_cycle() {
                 case 0:
                     update_shift();
                     name_table = ppu_read(0x2000 | (ppu_internals.v & 0x0FFF));
-                    fprintf(logfile, "ad : %04hx\n", 0x2000 | (ppu_internals.v & 0x0FFF));
-                    fprintf(logfile, "nt :   %02hhx\n", name_table);
-                    fprintf(logfile, "v  : %04hx\n", ppu_internals.v);
-                    fprintf(logfile, "sc :  %03hu\n", scanline);
-                    fprintf(logfile, "cyc:  %03hu\n\n", ppuCycles);
                     break;
                 case 2: 
                     attribute = ppu_read(0x23C0 | (nametable_y() << 11)
@@ -463,6 +462,9 @@ void ppu_cycle() {
     if (ppuCycles == 341 || (odd_frame && scanline == -1 && ppuCycles == 340 && (render_background() || render_sprites()))) {
         ppuCycles = 0;
         sprite_0_in_scanline = sprite_0_in_next_scanline;
+        sprites = 0;
+        byte_of_sprite = 0;
+        sprite_index_in_oam_data = 0;
         sprite_0_in_next_scanline = false;
         scanline++;
         if (scanline == 261) {
