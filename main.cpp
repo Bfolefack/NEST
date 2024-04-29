@@ -15,7 +15,6 @@ CPU cpu;
 std::string output_filename;
 bool use_tas;
 bool create_tas;
-FILE* logfile;
 
 int main (int argc, char** argv, char** envp) {
     if (argc < 2) {
