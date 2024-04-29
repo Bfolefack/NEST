@@ -8,7 +8,7 @@
 #include <time.h>
 #include <chrono>
 
-#define SAMPLE_COUNT 1024
+#define SAMPLE_COUNT 16384
 #define TARGET_FREQUENCY 357954
 #define WAVEFORM_SIZE 1230
 
@@ -389,36 +389,36 @@ float process_sound()
     }
 
     return pulse_out + tnd_out;
+    // return 0;
 }
 
-#define dividend 3
 
-uint64_t generate_rotator()
-{
-    uint64_t rotator = 0;
-    float accumulator = 0;
-    for (int i = 0; i < 64; i++)
-    {
-        accumulator += (1789773.f / dividend / TARGET_FREQUENCY) - (int)((1789773.f / dividend / TARGET_FREQUENCY));
-        if (accumulator < 1)
-        {
-            rotator |= 0 << i;
-        }
-        else
-        {
-            rotator |= 1ull << i;
-            accumulator -= 1;
-        }
-    }
-    return rotator;
-}
+// uint64_t generate_rotator()
+// {
+//     uint64_t rotator = 0;
+//     float accumulator = 0;
+//     for (int i = 0; i < 64; i++)
+//     {
+//         accumulator += (1789773.f / TARGET_FREQUENCY) - (int)((1789773.f / TARGET_FREQUENCY));
+//         if (accumulator < 1)
+//         {
+//             rotator |= 0 << i;
+//         }
+//         else
+//         {
+//             rotator |= 1ull << i;
+//             accumulator -= 1;
+//         }
+//     }
+//     return rotator;
+// }
 
 void play_sound()
 {
 
     static int16_t *sample_buffer = (int16_t *)calloc(SAMPLE_COUNT, sizeof(int16_t));
-    static uint64_t rotator = generate_rotator();
-    static int8_t sample_countdown = (int)((1789773.f / dividend / TARGET_FREQUENCY));
+    // static uint64_t rotator = generate_rotator();
+    static int8_t sample_countdown = 0;
     static int16_t *single_sample_buffer = (int16_t *)calloc(sample_countdown, sizeof(int16_t));
     static int16_t sample_count = 0;
     static int16_t sound = 0;
@@ -428,9 +428,9 @@ void play_sound()
         sound = (int16_t)((process_sound()) * (0x7FFF));
         sample_buffer[sample_count] = sound;
         sample_count++;
-        sample_countdown = (int)((1789773.f / dividend / TARGET_FREQUENCY));
-        uint64_t bit = (rotator & 1);
-        rotator = (rotator >> 1) | (bit << 63ull);
+        sample_countdown = (int)((1789773.f /2/ TARGET_FREQUENCY));
+        // uint64_t bit = (rotator & 1);
+        // rotator = (rotator >> 1) | (bit << 63ull);
 
         if (sample_count == SAMPLE_COUNT)
         {
@@ -473,6 +473,7 @@ void apu_cycle()
     }
     if (triangle.enable)
         update_triangle(triangle);
+    play_sound();
 }
 
 void frame_clock()
