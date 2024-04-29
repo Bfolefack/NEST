@@ -71,11 +71,11 @@ bool render_sprites() {
 
 uint16_t mirror_vram_addr(uint16_t addr) {
     if (mirroring == HORIZONTAL) {
-        if (addr >= 0x2400 && addr < 0x2800) {
+        if (addr >= 0x2400 && addr < 0x2C00) {
             return addr - 0x2400;
         }
         else if (addr >= 0x2C00) {
-            return addr - 0x2400;
+            return addr - 0x2800;
         }
         return addr - 0x2000;
     }
@@ -94,14 +94,14 @@ void ppu_write(uint16_t addr, uint8_t data) {
     if (0 <= addr && addr <= 0x1FFF) {
         // can't happen
     }
-    else if(0x2000 <= addr && addr <= 0x2FFF) {
+    else if (0x2000 <= addr && addr <= 0x2FFF) {
         vram[mirror_vram_addr(addr)] = data;
         // write VRAM
     }
     else if (0x3F00 <= addr && addr <= 0x3FFF) {
-        addr = addr & 0x1F;
-        if (addr & 0b11 == 0) { // mirroring
-            addr = addr & 0xF;
+        addr &= 0x1F;
+        if ((addr & 0b11) == 0) { // mirroring
+            addr &= 0xF;
         }
         palette_table[addr] = data;
         // read from palette table
@@ -112,7 +112,7 @@ uint8_t ppu_read(uint16_t addr) {
     if (0 <= addr && addr <= 0x1FFF) {
         return chr_rom[addr];
         // read from CHR ROM
-    } else if(0x2000 <= addr && addr <= 0x2FFF) {
+    } else if (0x2000 <= addr && addr <= 0x2FFF) {
         return vram[mirror_vram_addr(addr)];
         // read from VRAM
     } else if (0x3F00 <= addr && addr <= 0x3FFF) {
@@ -159,8 +159,8 @@ uint8_t tall_sprites() {
 }
 
 void sprite_evaluation() {
+    // TODO OAM secondary not updated correctly
     if (0 <= scanline && scanline < 240) {
-        // sprite evaluation
         if (1 <= ppuCycles && ppuCycles <= 64) {
             if (ppuCycles & 0b1) {
                 oam_read = 0xFF;
@@ -208,32 +208,38 @@ void sprite_evaluation() {
         } else if (257 <= ppuCycles && ppuCycles <= 320) {
             if ((ppuCycles & 0b111) == 0b000) {
                 // fetch sprite tile data
-                uint8_t secondary_index = (ppuCycles - 264) >> 8;
-                uint8_t attributes = oam_secondary[4 * secondary_index + 2];
-                uint16_t tile_index = oam_secondary[4 * secondary_index + 1];
-                uint16_t y_index = (scanline - oam_secondary[4 * secondary_index]); 
-                if (tall_sprites()) { 
-                    tile_index = (((tile_index & 0b1) << 7) | (tile_index >> 1)) << 5;        
-                    if (attributes & 0b10000000) { // vertical flip
-                        y_index = 16 - y_index;
+                uint8_t secondary_index = (ppuCycles - 264) % 8;
+                if (sprites > secondary_index) {
+                    uint8_t attributes = oam_secondary[4 * secondary_index + 2];
+                    uint16_t tile_index = oam_secondary[4 * secondary_index + 1];
+                    uint16_t y_index = (scanline - oam_secondary[4 * secondary_index]);
+                    if (tall_sprites()) { 
+                        tile_index = (((tile_index & 0b1) << 7) | (tile_index >> 1)) << 5;        
+                        if (attributes & 0b10000000) { // vertical flip
+                            y_index = 16 - y_index;
+                        }
+                    } else {
+                        tile_index = (((uint16_t) (ppu_regs.ppu_ctrl & 0b1000)) << 9) | (tile_index << 4);
+                        if (attributes & 0b10000000) { // vertical flip
+                            y_index = 8 - y_index;
+                        }
+                    }
+                    uint8_t plane_0 = ppu_read(tile_index | (y_index << 1) | 0b0);
+                    uint8_t plane_1 = ppu_read(tile_index | (y_index << 1) | 0b1);
+                    if (attributes & 0b1000000) { // horizontal flip
+                        for (uint8_t i = 0; i < 8; i++) {
+                            uint16_t index = ((plane_0 & (1 << (7 - i))) >> (6 - i)) | ((plane_1 & (7 - i)) >> (7 - i));
+                            sprite_tile_data[secondary_index][i] = ppu_read(0x3F10 | ((attributes & 0b11) << 2) | index);
+                        }
+                    } else {
+                        for (uint8_t i = 0; i < 8; i++) {
+                            uint16_t index = ((plane_0 & (1 << i)) >> (i - 1)) | ((plane_1 & (1 << i)) >> i);
+                            sprite_tile_data[secondary_index][i] = ppu_read(0x3F10 | ((attributes & 0b11) << 2) | index);
+                        }
                     }
                 } else {
-                    tile_index = (((uint16_t) (ppu_regs.ppu_ctrl & 0b1000)) << 9) | (tile_index << 4);
-                    if (attributes & 0b10000000) { // vertical flip
-                        y_index = 8 - y_index;
-                    }
-                }
-                uint8_t plane_0 = ppu_read(tile_index | (y_index << 1) | 0b0);
-                uint8_t plane_1 = ppu_read(tile_index | (y_index << 1) | 0b1);
-                if (attributes & 0b1000000) { // horizontal flip
                     for (uint8_t i = 0; i < 8; i++) {
-                        uint16_t index = ((plane_0 & (1 << (7 - i))) >> (6 - i)) | ((plane_1 & (7 - i)) >> (7 - i));
-                        sprite_tile_data[secondary_index][i] = ppu_read(0x3F10 | ((attributes & 0b11) << 2) | index);
-                    }
-                } else {
-                    for (uint8_t i = 0; i < 8; i++) {
-                        uint16_t index = ((plane_0 & (1 << i)) >> (i - 1)) | ((plane_1 & (1 << i)) >> i);
-                        sprite_tile_data[secondary_index][i] = ppu_read(0x3F10 | ((attributes & 0b11) << 2) | index);
+                        sprite_tile_data[secondary_index][i] = 0;
                     }
                 }
             }
@@ -246,7 +252,7 @@ uint8_t sprite_pixel() {
     uint8_t used_sprite = 8;
     uint8_t diff;
     for (uint8_t i = 0; i < 8; i++) {
-        uint8_t diff = current_x - sprite_xes[i];
+        diff = current_x - sprite_xes[i];
         if (diff < 8) {
             used_sprite = i;
             break;
@@ -269,19 +275,20 @@ uint8_t choose_pixel(uint8_t sprite_pixel, uint8_t bg_pixel) {
         }
     }
 
-    if (!render_sprites()) {
-        return bg_pixel;
-    } else if (!render_background()) {
-        return (1 << 4) | sprite_pixel;
-    } else if ((sprite_pixel & 0b11) == 0b00) {
-        return bg_pixel;
-    } else if ((bg_pixel & 0b11) == 0b00) {
-        return (1 << 4) | sprite_pixel;
-    } else if (sprite_pixel & 0b100000) {
-        return (1 << 4) | sprite_pixel;
-    } else {
-        return bg_pixel;
-    }
+    // if (!render_sprites()) {
+    //     return bg_pixel;
+    // } else if (!render_background()) {
+    //     return (1 << 4) | sprite_pixel;
+    // } else if ((sprite_pixel & 0b11) == 0b00) {
+    //     return bg_pixel;
+    // } else if ((bg_pixel & 0b11) == 0b00) {
+    //     return (1 << 4) | sprite_pixel;
+    // } else if (sprite_pixel & 0b100000) {
+    //     return (1 << 4) | sprite_pixel;
+    // } else {
+    //     return bg_pixel;
+    // }
+    return bg_pixel;
 }
 
 void update_shift() {
@@ -319,7 +326,7 @@ void ppu_cycle() {
         }
 
         if (scanline == -1 && ppuCycles == 1) {
-            ppu_regs.ppu_status = ppu_regs.ppu_status & 0b00011111;
+            ppu_regs.ppu_status &= 0b00011111;
         }
 
         if ((ppuCycles >= 2 && ppuCycles < 258) || (ppuCycles >= 321 && ppuCycles < 338)) {
@@ -346,13 +353,11 @@ void ppu_cycle() {
                     break;
                 case 4: 
                     background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
-                    // printf("lo: %hhx\n", name_table);
-                    tile_low = ppu_read((background << 12) + (((uint16_t) name_table) << 4) + (fine_y()));
+                    tile_low = ppu_read((background << 12) | (((uint16_t) name_table) << 4) | (fine_y()));
                     break;
                 case 6:
                     background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
-                    // printf("hi: %hhx\n", name_table);
-                    tile_high = ppu_read((background << 12) + (((uint16_t) name_table) << 4) + (fine_y() + 8));
+                    tile_high = ppu_read((background << 12) | (((uint16_t) name_table) << 4) | (fine_y() + 8));
                     break;
                 case 7:
                     if (render_background() || render_sprites()) {
@@ -384,7 +389,7 @@ void ppu_cycle() {
                     else {
                         coarseY = 0;
                         uint16_t inverse_name_table_y = ~nametable_y();
-                        inverse_name_table_y =  inverse_name_table_y << 11;
+                        inverse_name_table_y = inverse_name_table_y << 11;
                         ppu_internals.v = (ppu_internals.v & 0b111011111111111) | inverse_name_table_y; 
                     }
                     coarseY = coarseY << 5;
@@ -419,15 +424,12 @@ void ppu_cycle() {
         }
     }
 
-    // updating vertical information for internal v
-
     if (scanline == 241 && ppuCycles == 1) {
         ppu_regs.ppu_status = ppu_regs.ppu_status | 0b10000000;
         if (vblank_nmi()) {
             cpu.nonmaskableInterrupt();
         }
     }
-
 
     // draw pixels
     uint8_t pixel;
