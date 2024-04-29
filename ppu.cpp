@@ -167,16 +167,9 @@ void sprite_evaluation() {
                 oam_secondary[ppuCycles >> 1] = oam_read;
             }
         } else if (65 <= ppuCycles && ppuCycles <= 256) {
-            if (ppuCycles == 255) {
-                    dump_oam_secondary();
-                    fprintf(logfile, "\nsprites: %hu\n\n", sprites);
-                }
             if (sprite_index_in_oam_data < 64) {
                 if (ppuCycles & 0b1) {
                     oam_read = oam_data[sprite_index_in_oam_data * 4 + byte_of_sprite];
-                    if (ppuCycles == 65) {
-                        fprintf(logfile, "\nscanline: %hx\n\n", scanline);
-                    }
                 } else {
                     if (sprites >= 8) {
                         if (scanline >= oam_read && (scanline < oam_read + 8 || (tall_sprites() && scanline < oam_read + 16))) {
@@ -236,13 +229,13 @@ void sprite_evaluation() {
                 uint8_t plane_1 = ppu_read(tile_index + ((tall_sprites() && y_index >= 8) << 4) | 0b1000 | (y_index % 8));
                 if (attributes & 0b1000000) { // horizontal flip
                     for (uint8_t i = 0; i < 8; i++) {
-                        uint16_t index = ((plane_0 & (1 << (7 - i))) >> (6 - i)) | ((plane_1 & (7 - i)) >> (7 - i));
+                        uint16_t index = ((plane_1 & (1 << (7 - i))) >> (7 - i)) | ((plane_0 & (1 << (7 - i))) >> (6 - i));
                         sprite_tile_data[secondary_index][i] = (attributes & 0b100000) | ((attributes & 0b11) << 2) | index;
                         // priority flag added for muxing
                     }
                 } else {
                     for (uint8_t i = 0; i < 8; i++) {
-                        uint16_t index = ((plane_0 & (1 << i)) >> (i - 1)) | ((plane_1 & (1 << i)) >> i);
+                        uint16_t index = ((plane_1 & (1 << i)) >> i) | ((plane_0 & (1 << i)) >> (i - 1));
                         sprite_tile_data[secondary_index][i] = (attributes & 0b100000) | ((attributes & 0b11) << 2) | index;
                         // priority flag added for muxing
                     }
