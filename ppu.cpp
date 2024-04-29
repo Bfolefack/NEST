@@ -327,7 +327,9 @@ void ppu_cycle() {
         }
 
         if ((ppuCycles >= 2 && ppuCycles < 258) || (ppuCycles >= 321 && ppuCycles < 338)) {
-            shift_left();
+            if (render_background()) {
+                shift_left();
+            }
             uint16_t background;
             switch ((ppuCycles - 1) % 8) {
                 case 0:
