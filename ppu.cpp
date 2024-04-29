@@ -264,7 +264,7 @@ uint8_t choose_pixel(uint8_t sprite_pixel, uint8_t bg_pixel) {
     if (sprite_0_used && render_background() && render_sprites() && ppuCycles != 256) {
         if (ppuCycles >= 8 || (ppu_regs.ppu_mask & 0b110) == 0b110) {
             if ((sprite_pixel & 0b11) == 0b00 && (bg_pixel & 0b11) == 0b00) {
-                ppu_regs.ppu_status |= 0b01000000;
+                ppu_regs.ppu_status |= 0b01000000; // sprite 0 hit
             }
         }
     }
@@ -346,11 +346,13 @@ void ppu_cycle() {
                     break;
                 case 4: 
                     background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
-                    tile_low = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y()));
+                    // printf("lo: %hhx\n", name_table);
+                    tile_low = ppu_read((background << 12) + (((uint16_t) name_table) << 4) + (fine_y()));
                     break;
                 case 6:
                     background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
-                    tile_high = ppu_read((background << 12) + ((uint16_t)name_table << 4) + (fine_y() + 8));
+                    // printf("hi: %hhx\n", name_table);
+                    tile_high = ppu_read((background << 12) + (((uint16_t) name_table) << 4) + (fine_y() + 8));
                     break;
                 case 7:
                     if (render_background() || render_sprites()) {
@@ -451,13 +453,14 @@ void ppu_cycle() {
 
     ppuCycles++;
 
-    if (ppuCycles == 341) {
+    if (ppuCycles == 341 || (odd_frame && scanline == -1 && ppuCycles == 340)) {
         ppuCycles = 0;
         sprite_0_in_scanline = sprite_0_in_next_scanline;
         sprite_0_in_next_scanline = false;
         scanline++;
         if (scanline == 261) {
             scanline = -1;
+            odd_frame = !odd_frame;
             if (ppuCycles == 0) {
                 draw_window();
             }
