@@ -390,7 +390,7 @@ void ppu_cycle() {
                     }
                     else {
                         coarseY = 0;
-                        uint16_t inverse_name_table_y = ~nametable_y();
+                        uint16_t inverse_name_table_y = !nametable_y();
                         inverse_name_table_y = inverse_name_table_y << 11;
                         ppu_internals.v = (ppu_internals.v & 0b111011111111111) | inverse_name_table_y; 
                     }
