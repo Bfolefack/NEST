@@ -78,8 +78,11 @@ int main (int argc, char** argv, char** envp) {
         }
         apu_cycle();
         ppu_cycle();
+        // play_sound();
         ppu_cycle();
+        // play_sound();
         ppu_cycle();
+        // play_sound();
         cpu.clock();
         cycle_number++; 
         // if (cycle_number % 0x100 == 0x0) {
