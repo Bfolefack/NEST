@@ -362,7 +362,7 @@ void ppu_cycle() {
                     if (render_background() || render_sprites()) {
                         if (coarse_x() == 31) {
                             ppu_internals.v &= 0xFFE0; // reset coarse x to 0
-                            uint8_t inverse_name_table_x = ~nametable_x();
+                            uint8_t inverse_name_table_x = !nametable_x();
                             ppu_internals.v = (ppu_internals.v & 0b111101111111111) | (inverse_name_table_x << 10);
                         }
                         else {
