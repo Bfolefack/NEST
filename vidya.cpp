@@ -8,7 +8,7 @@
 #include <time.h>
 #include <chrono>
 
-#define SAMPLE_COUNT 44100
+#define SAMPLE_COUNT 8192
 
 SDL_Window* window = NULL;
 SDL_Surface* screenSurface = NULL;
