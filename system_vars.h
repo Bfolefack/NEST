@@ -27,6 +27,6 @@ extern uint8_t oam_secondary[32];
 extern Mirror_Type mirroring;
 extern uint8_t mapper;
 
-extern FILE* logfile;
+extern bool use_tas;
 
 #endif

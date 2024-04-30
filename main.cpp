@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <chrono>
 #include "system_vars.h"
 #include "loadnes.h"
 #include "loadtas.h"
@@ -14,7 +15,6 @@ CPU cpu;
 std::string output_filename;
 bool use_tas;
 bool create_tas;
-FILE* logfile;
 
 int main (int argc, char** argv, char** envp) {
     if (argc < 2) {
@@ -24,7 +24,6 @@ int main (int argc, char** argv, char** envp) {
 
     init_SDL();
     load_nes(argv[1]);
-    logfile = fopen("log.txt", "w");
     
     if (argc > 2) {
         std::string flag(argv[2]);
@@ -76,7 +75,7 @@ int main (int argc, char** argv, char** envp) {
             refresh_window();
             frame_clock();
         }
-        apu_cycle();
+        //apu_cycle();
         ppu_cycle();
         // play_sound();
         ppu_cycle();
@@ -85,9 +84,6 @@ int main (int argc, char** argv, char** envp) {
         // play_sound();
         cpu.clock();
         cycle_number++; 
-        // if (cycle_number % 0x100 == 0x0) {
-        //     test();
-        // }
     }
 }
 

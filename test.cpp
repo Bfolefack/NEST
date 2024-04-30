@@ -30,12 +30,12 @@ void test() {
 }
 
 void dump_oam_data() {
-    for (int i = 0; i < 64; i++) {
-        fprintf(logfile, "y: %02hhx\n", oam_data[4*i]);
-        fprintf(logfile, "t: %02hhx\n", oam_data[4*i + 1]);
-        fprintf(logfile, "a: %02hhx\n", oam_data[4*i + 2]);
-        fprintf(logfile, "x: %02hhx\n\n", oam_data[4*i + 3]);
-    }
+    // for (int i = 0; i < 64; i++) {
+    //     fprintf(logfile, "y: %02hhx\n", oam_data[4*i]);
+    //     fprintf(logfile, "t: %02hhx\n", oam_data[4*i + 1]);
+    //     fprintf(logfile, "a: %02hhx\n", oam_data[4*i + 2]);
+    //     fprintf(logfile, "x: %02hhx\n\n", oam_data[4*i + 3]);
+    // }
 }
 
 void dump_prg_rom(char* filename) {
@@ -47,11 +47,11 @@ void dump_prg_rom(char* filename) {
 }
 
 void dump_oam_secondary() {
-    for (int i = 0; i < 8; i++) {
-        fprintf(logfile, "y: %02hhx\n", oam_secondary[4*i]);
-        fprintf(logfile, "t: %02hhx\n", oam_secondary[4*i + 1]);
-        fprintf(logfile, "a: %02hhx\n", oam_secondary[4*i + 2]);
-        fprintf(logfile, "x: %02hhx\n\n", oam_secondary[4*i + 3]);
-    }
+    // for (int i = 0; i < 8; i++) {
+    //     fprintf(logfile, "y: %02hhx\n", oam_secondary[4*i]);
+    //     fprintf(logfile, "t: %02hhx\n", oam_secondary[4*i + 1]);
+    //     fprintf(logfile, "a: %02hhx\n", oam_secondary[4*i + 2]);
+    //     fprintf(logfile, "x: %02hhx\n\n", oam_secondary[4*i + 3]);
+    // }
 }
 
