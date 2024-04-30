@@ -69,17 +69,16 @@ bool render_sprites() {
 
 uint16_t mirror_vram_addr(uint16_t addr) {
     if (mirroring == HORIZONTAL) {
-        if (addr >= 0x2800 && addr < 0x2C00) {
-            return addr - 0x2800;
+        if (addr >= 0x2400 && addr < 0x2C00) {
+            return addr - 0x2400;
         }
         else if (addr >= 0x2C00) {
             return addr - 0x2800;
         }
         return addr - 0x2000;
-    }
-    else {
-        if (addr >= 0x2400 && addr < 0x2C00) {
-            return addr - 0x2400;
+    } else {
+        if (addr >= 0x2800 && addr < 0x2C00) {
+            return addr - 0x2800;
         }
         else if (addr >= 0x2C00) {
             return addr - 0x2800;
@@ -98,8 +97,8 @@ void ppu_write(uint16_t addr, uint8_t data) {
     }
     else if (0x3F00 <= addr && addr <= 0x3FFF) {
         addr &= 0x1F;
-        if ((addr & 0b11) == 0b00) { // mirroring
-            addr &= 0xF;
+        if ((addr & 0b11) == 0) { // mirroring
+            addr &= 0x7;
         }
         palette_table[addr] = data;
         // read from palette table
@@ -115,8 +114,8 @@ uint8_t ppu_read(uint16_t addr) {
         // read from VRAM
     } else if (0x3F00 <= addr && addr <= 0x3FFF) {
         addr &= 0x1F;
-        if ((addr & 0b11) == 0) {
-            addr &= 0xF;
+        if ((addr & 0b11) == 0) { // mirroring
+            addr &= 0x7;
         }
         return palette_table[addr];
     } else {

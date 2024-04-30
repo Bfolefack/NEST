@@ -72,9 +72,9 @@ void load_nes(char* filename) {
     }
 
     if (flags_6 & 0b1) {
-        mirroring = HORIZONTAL;
-    } else {
         mirroring = VERTICAL;
+    } else {
+        mirroring = HORIZONTAL;
     }
 
     mapper = (flags_7 & 0b11110000) | (flags_6 >> 4);
