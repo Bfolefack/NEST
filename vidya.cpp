@@ -33,6 +33,9 @@ uint8_t *pulse2_waveform;
 uint8_t *triangle_waveform;
 uint8_t *noise_waveform;
 
+auto frame_start = std::chrono::system_clock::now();
+auto frame_end = std::chrono::system_clock::now();
+
 void init_SDL()
 {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
@@ -190,13 +193,15 @@ void draw_window()
         }
     }
 
-    // uint64_t new_time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    // uint64_t delta = new_time - time;
-    // time = new_time;
-    // if (delta < 16666)
-    // {
-    //     SDL_Delay((16666 - delta) / 1000);
-    // }
+    // Wait for the frame to end
+    frame_end = std::chrono::system_clock::now();
+    auto delta = frame_end - frame_start;
+    auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::milliseconds(17) - delta);
+    if (remaining.count() > 0) {
+        SDL_Delay(remaining.count());
+    }
+    frame_start = std::chrono::system_clock::now();
+
     SDL_UpdateWindowSurface(window);
 }
 

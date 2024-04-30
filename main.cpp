@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <chrono>
+#include <unistd.h>
 #include "system_vars.h"
 #include "loadnes.h"
 #include "loadtas.h"
@@ -60,7 +61,16 @@ int main (int argc, char** argv, char** envp) {
     cycle_number = 0;
     int tas_input_index = 0;
 
+    // Game loop
     while (1) {
+        //apu_cycle();
+        ppu_cycle();
+        //play_sound();
+        ppu_cycle();
+        //play_sound();
+        ppu_cycle();
+        //play_sound();
+        cpu.clock();
         if (cycle_number % 29780 == 0) {
             if (use_tas && tas_input_index < tas_inputs.size() && frame_number == tas_inputs[tas_input_index].first) {
                 P1_joypad.input.button_register = tas_inputs[tas_input_index].second;
@@ -75,15 +85,7 @@ int main (int argc, char** argv, char** envp) {
             refresh_window();
             frame_clock();
         }
-        //apu_cycle();
-        ppu_cycle();
-        //play_sound();
-        ppu_cycle();
-        //play_sound();
-        ppu_cycle();
-        //play_sound();
-        cpu.clock();
-        cycle_number++; 
+        cycle_number++;
     }
 }
 
