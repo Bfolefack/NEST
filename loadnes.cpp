@@ -78,4 +78,8 @@ void load_nes(char* filename) {
     }
 
     mapper = (flags_7 & 0b11110000) | (flags_6 >> 4);
+
+    if (mapper != 0) {
+        printf("Unknown mapper %hhu", mapper);
+    }
 }

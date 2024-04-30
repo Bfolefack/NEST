@@ -267,9 +267,6 @@ uint8_t choose_pixel(uint8_t sprite_pixel, uint8_t bg_pixel) {
         if (ppuCycles >= 8 || ((ppu_regs.ppu_mask & 0b110) == 0b110)) {
             if ((sprite_pixel & 0b11) && (bg_pixel & 0b11)) {
                 ppu_regs.ppu_status |= 0b01000000; // sprite 0 hit
-                printf("%hx\n", scanline);
-                printf("%hx\n", ppuCycles);
-                printf("%hx\n\n", oam_data[0]);
             }
         }
     }
