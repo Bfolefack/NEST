@@ -77,11 +77,11 @@ int main (int argc, char** argv, char** envp) {
         }
         //apu_cycle();
         ppu_cycle();
-        // play_sound();
+        //play_sound();
         ppu_cycle();
-        // play_sound();
+        //play_sound();
         ppu_cycle();
-        // play_sound();
+        //play_sound();
         cpu.clock();
         cycle_number++; 
     }

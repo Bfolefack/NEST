@@ -249,7 +249,7 @@ uint8_t sprite_pixel() {
     int16_t diff;
     for (uint8_t i = 0; i < 8; i++) {
         diff = ppuCycles - sprite_xes[i];
-        if (diff >= 0 && diff < 8) {
+        if (diff >= 0 && diff < 8 && (sprite_tile_data[i][diff] % 16)) {
             used_sprite = i;
             break;
         }
@@ -258,14 +258,14 @@ uint8_t sprite_pixel() {
     if (used_sprite < 8) {
         return sprite_tile_data[used_sprite][diff];
     } else {
-        return 0; // no sprites hit
+        return 0b00100000; // no sprites hit
     }
 }
 
 uint8_t choose_pixel(uint8_t sprite_pixel, uint8_t bg_pixel) {
     if (sprite_0_used && render_background() && render_sprites() && ppuCycles != 256) {
         if (ppuCycles >= 8 || (ppu_regs.ppu_mask & 0b110) == 0b110) {
-            if ((sprite_pixel & 0b11) == 0b00 && (bg_pixel & 0b11) == 0b00) {
+            if ((sprite_pixel & 0b11) && (bg_pixel & 0b11)) {
                 ppu_regs.ppu_status |= 0b01000000; // sprite 0 hit
             }
         }
@@ -339,10 +339,10 @@ void ppu_cycle() {
                     | (coarse_x() >> 2));
 
                     if (coarse_y() & 0x02) {
-                        attribute = attribute >> 4;
+                        attribute >>= 4;
                     }
                     if (coarse_x() & 0x02) {
-                        attribute = attribute >> 2;
+                        attribute >>= 2;
                     }
                     attribute &= 0x3;
                     break;
@@ -365,7 +365,6 @@ void ppu_cycle() {
                         else {
                             ppu_internals.v++; // increment coarse x
                         }
-                        
                     }
                     break;
             }
