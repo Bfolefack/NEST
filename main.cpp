@@ -63,7 +63,7 @@ int main (int argc, char** argv, char** envp) {
 
     // Game loop
     while (1) {
-        //apu_cycle();
+        apu_cycle();
         ppu_cycle();
         //play_sound();
         ppu_cycle();

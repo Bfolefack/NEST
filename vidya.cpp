@@ -9,7 +9,7 @@
 #include <time.h>
 #include <chrono>
 
-#define SAMPLE_COUNT 1024
+#define SAMPLE_COUNT 4096
 #define INPUT_FREQUENCY 1789773/5
 #define TARGET_FREQUENCY 59659
 #define RATIO (INPUT_FREQUENCY / TARGET_FREQUENCY)
