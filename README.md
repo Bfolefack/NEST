@@ -1,6 +1,11 @@
 # NEST
 A TAS enhanced emulator for the NES
 
+# How to Run:
+1) Clone this repository
+2) Run "make build" in the console (make sure you have g++ installed)
+3) Run a command to play a game, play a TAS, or create a TAS (see below for details)
+
 # Instructions
 To compile the project (make sure to do this first): make build  
 To play a game: make play game=[game filename, without extension]  
