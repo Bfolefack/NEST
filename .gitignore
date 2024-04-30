@@ -17,9 +17,8 @@
 *.pch
 
 # Libraries
-*.lib
 
-*.lo
+
 
 # Shared objects (inc. Windows DLLs)
 *.so

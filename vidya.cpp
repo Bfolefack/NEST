@@ -5,12 +5,17 @@
 #include "src/include/SDL2/SDL.h"
 #include "src/include/SDL2/SDL_audio.h"
 #include "stdint.h"
+#include "src/include/samplerate.h"
 #include <time.h>
 #include <chrono>
 
-#define SAMPLE_COUNT 16384
-#define TARGET_FREQUENCY 357954
+#define SAMPLE_COUNT 1024
+#define INPUT_FREQUENCY 1789773/5
+#define TARGET_FREQUENCY 59659
+#define RATIO (INPUT_FREQUENCY / TARGET_FREQUENCY)
 #define WAVEFORM_SIZE 1230
+
+
 
 SDL_Window *window = NULL;
 SDL_Surface *screenSurface = NULL;
@@ -35,6 +40,41 @@ uint8_t *noise_waveform;
 
 auto frame_start = std::chrono::system_clock::now();
 auto frame_end = std::chrono::system_clock::now();
+float *sample_buffer = (float *)calloc(SAMPLE_COUNT * RATIO, sizeof(float));
+int8_t sample_countdown = 0;
+uint32_t sample_count = 0;
+int16_t sound = 0;
+
+void SDLCALL audio_callback(void *userdata, Uint8 *stream, int len)
+{
+    static float *resampled_buffer = (float *)calloc(SAMPLE_COUNT, sizeof(float));
+    static int16_t *resampled_buffer_int16 = (int16_t *)calloc(SAMPLE_COUNT, sizeof(int16_t));
+
+    len = SAMPLE_COUNT * sizeof(int16_t);
+    SDL_memset(stream, 0, len);
+    SRC_STATE *src_state = src_new(SRC_SINC_FASTEST, 1, NULL);
+    if(src_state == NULL)
+    {
+        printf("src_new failed\n");
+    }
+    SRC_DATA src_data;
+    src_data.data_in = sample_buffer;
+    src_data.input_frames = SAMPLE_COUNT * RATIO;
+    src_data.data_out = resampled_buffer;
+    src_data.output_frames = SAMPLE_COUNT;
+    src_data.src_ratio = 1.0 / RATIO;
+    src_simple(&src_data, SRC_SINC_FASTEST, 1);
+
+    src_delete(src_state);
+
+    for (int i = 0; i < SAMPLE_COUNT; i++)
+    {
+        resampled_buffer_int16[i] = resampled_buffer[i] * 32767;
+    }
+    SDL_MixAudioFormat(stream, (uint8_t *)resampled_buffer_int16, AUDIO_S16SYS, len, SDL_MIX_MAXVOLUME);
+    sample_count = 0;
+}
+
 
 void init_SDL()
 {
@@ -70,12 +110,13 @@ void init_SDL()
 
     // Set up the audio stream
     SDL_zero(want);
-    want.freq = TARGET_FREQUENCY; // or whatever your sample rate is
+    want.freq = TARGET_FREQUENCY;
     want.format = AUDIO_S16SYS;
-    want.channels = 1;           // 1 for mono, 2 for stereo
-    want.samples = SAMPLE_COUNT; // a good value for games, adjust as necessary
-    want.callback = NULL;        // we're using SDL_QueueAudio, not a callback
+    want.channels = 1;
+    want.samples = SAMPLE_COUNT;
+    want.callback = audio_callback;       
     dev = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
+    SDL_PauseAudioDevice(dev, 0);
 
     printf("Opened audio device with %d channels\n", have.channels);
     printf("Opened audio device with frequency %d\n", have.freq);
@@ -378,7 +419,7 @@ float process_sound()
     uint8_t triangle_wave = process_triangle(triangle);
     uint8_t noise_wave = process_noise(noise);
     float pulse_out = pulse1_wave == 0 && pulse2_wave == 0 ? 0 : 95.88f / ((8128.0f / (pulse1_wave + pulse2_wave)) + 100.f);
-    float tnd_out = triangle_wave == 0 && noise_wave == 0 ? 0 : 159.79f / ((1.0f / (triangle_wave / 8227.0f + noise_wave / 12241.0f)) + 100.f);
+    float tnd_out = triangle_wave == 0 && noise_wave == 0 ? 0 : 159.79f / ((1.0f / (triangle_wave / 8227.0f + noise_wave / 122410.0f)) + 100.f);
 
     static uint16_t waveform_index = 0;
     pulse1_waveform[waveform_index] = pulse1_wave;
@@ -405,8 +446,7 @@ float process_sound()
         SDL_UpdateWindowSurface(wave_window);
     }
 
-    return pulse_out + tnd_out;
-    // return 0;
+    return 5 * (pulse_out + tnd_out);
 }
 
 
@@ -432,43 +472,11 @@ float process_sound()
 
 void play_sound()
 {
-
-    static int16_t *sample_buffer = (int16_t *)calloc(SAMPLE_COUNT, sizeof(int16_t));
-    // static uint64_t rotator = generate_rotator();
-    static int8_t sample_countdown = 0;
-    static int16_t *single_sample_buffer = (int16_t *)calloc(sample_countdown, sizeof(int16_t));
-    static int16_t sample_count = 0;
-    static int16_t sound = 0;
-
-    if (0 == sample_countdown)
+    if (sample_count  < SAMPLE_COUNT * RATIO)
     {
-        sound = (int16_t)((process_sound()) * (0x7FFF));
-        sample_buffer[sample_count] = sound;
+        sample_buffer[sample_count] = process_sound();
         sample_count++;
-        sample_countdown = (int)((1789773.f /2/ TARGET_FREQUENCY));
-        // uint64_t bit = (rotator & 1);
-        // rotator = (rotator >> 1) | (bit << 63ull);
-
-        if (sample_count == SAMPLE_COUNT)
-        {
-            SDL_QueueAudio(dev, sample_buffer, SAMPLE_COUNT * sizeof(int16_t));
-            SDL_PauseAudioDevice(dev, 0);
-            sample_count = 0;
-        }
     }
-    else
-    {
-        sample_countdown--;
-    }
-
-    // int16_t sound = (int16_t) ((process_sound()) * 0x7FFF);
-    // sample_buffer[sample_count] = sound;
-    // sample_count++;
-    // if(sample_count == SAMPLE_COUNT){
-    //     SDL_QueueAudio(dev, sample_buffer, SAMPLE_COUNT * sizeof(int16_t));
-    //     SDL_PauseAudioDevice(dev, 0);
-    //     sample_count = 0;
-    // }
 }
 
 void apu_cycle()
@@ -491,6 +499,7 @@ void apu_cycle()
     if (triangle.enable)
         update_triangle(triangle);
     play_sound();
+
 }
 
 void frame_clock()
