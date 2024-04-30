@@ -69,8 +69,8 @@ bool render_sprites() {
 
 uint16_t mirror_vram_addr(uint16_t addr) {
     if (mirroring == HORIZONTAL) {
-        if (addr >= 0x2400 && addr < 0x2C00) {
-            return addr - 0x2400;
+        if (addr >= 0x2800 && addr < 0x2C00) {
+            return addr - 0x2800;
         }
         else if (addr >= 0x2C00) {
             return addr - 0x2800;
@@ -78,8 +78,8 @@ uint16_t mirror_vram_addr(uint16_t addr) {
         return addr - 0x2000;
     }
     else {
-        if (addr >= 0x2800 && addr < 0x2C00) {
-            return addr - 0x2800;
+        if (addr >= 0x2400 && addr < 0x2C00) {
+            return addr - 0x2400;
         }
         else if (addr >= 0x2C00) {
             return addr - 0x2800;
