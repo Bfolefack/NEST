@@ -90,7 +90,6 @@ uint16_t mirror_vram_addr(uint16_t addr) {
 
 void ppu_write(uint16_t addr, uint8_t data) {
     if (0 <= addr && addr <= 0x1FFF) {
-        printf("Writing to read-only memory.");
         // can't happen
     }
     else if (0x2000 <= addr && addr <= 0x2FFF) {
@@ -257,9 +256,6 @@ uint8_t sprite_pixel() {
     }
     sprite_0_used = (used_sprite == 0) && sprite_0_in_scanline;
     if (used_sprite < 8) {
-        if (sprite_tile_data[used_sprite][diff] & 0b11000000) {
-            printf("holler");
-        }
         return sprite_tile_data[used_sprite][diff];
     } else {
         return 0; // no sprites hit
