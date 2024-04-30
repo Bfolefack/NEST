@@ -190,13 +190,13 @@ void draw_window()
         }
     }
 
-    uint64_t new_time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    uint64_t delta = new_time - time;
-    time = new_time;
-    if (delta < 16666)
-    {
-        SDL_Delay((16666 - delta) / 1000);
-    }
+    // uint64_t new_time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    // uint64_t delta = new_time - time;
+    // time = new_time;
+    // if (delta < 16666)
+    // {
+    //     SDL_Delay((16666 - delta) / 1000);
+    // }
     SDL_UpdateWindowSurface(window);
 }
 
