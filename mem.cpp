@@ -142,7 +142,7 @@ void write(uint16_t address, uint8_t data) {
                     uint16_t coarse_x = data >> 3;
                     ppu_internals.t = (ppu_internals.t & 0b1111111111100000) | (coarse_x);
                 }
-                ppu_internals.w = !ppu_internals.w;
+                ppu_internals.w ^= 1;
                 return;
             case 6:
                 if (ppu_internals.w) {
@@ -152,7 +152,7 @@ void write(uint16_t address, uint8_t data) {
                 else {
                     ppu_internals.t = (((uint16_t)(data & 0x3F)) << 8) | (ppu_internals.t & 0xFF);
                 }
-                ppu_internals.w = !ppu_internals.w;
+                ppu_internals.w ^= 1;
                 return;
             case 7:
                 ppu_write(ppu_internals.v, data);
