@@ -450,7 +450,7 @@ void ppu_cycle() {
     uint8_t paletteChoice = choose_pixel(sprite_pixel(), (palette << 2) + pixel);
     Color pixelColor = SYSTEM_PALETTE[ppu_read(0x3F00 | paletteChoice)];
     if (ppuCycles < 256 && scanline < 240 && scanline >= 0) {
-        image_buffer[scanline][ppuCycles - ppu_internals.x] = pixelColor;
+        image_buffer[scanline][ppuCycles] = pixelColor;
     }
 
     ppuCycles++;
