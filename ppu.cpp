@@ -1,16 +1,42 @@
 #include "system_vars.h"
 #include "ppu.h"
-#include "execute.h"
+#include "vidya.h"
 #include <tuple>
 #include <array>
 
 PPU_EXTERNAL_REGS ppu_regs;
 PPU_INTERNAL_REGS ppu_internals;
-uint8_t data_buffer = 0;
+
+uint8_t palette_table[32];
+uint8_t vram[2048];
+uint8_t oam_data[256];
+uint8_t oam_secondary[32];
+uint8_t sprite_xes[8];
+uint8_t sprite_tile_data[8][8];
+bool odd_frame = false;
+
 using Color = std::tuple<uint8_t, uint8_t, uint8_t>;
 uint16_t ppuCycles = 0;
-uint16_t scanline = 0;
-bool vblank = false;
+int16_t scanline = 0;
+
+bool sprite_0_used;
+bool sprite_0_in_next_scanline;
+bool sprite_0_in_scanline;
+uint8_t sprites;
+uint8_t oam_read;
+uint8_t sprite_index_in_oam_data;
+uint8_t byte_of_sprite;
+
+uint8_t name_table;
+uint8_t attribute;
+uint8_t tile_low;
+uint8_t tile_high;
+Color image_buffer[240][256];
+
+uint16_t shift_pattern_low;
+uint16_t shift_pattern_high;
+uint16_t shift_attribute_low;
+uint16_t shift_attribute_high;
 
 // source: https://bugzmanov.github.io/nes_ebook/chapter_6_3.html
 const std::array<Color, 64> SYSTEM_PALETTE = {
@@ -32,50 +58,67 @@ const std::array<Color, 64> SYSTEM_PALETTE = {
     Color(0x99, 0xFF, 0xFC), Color(0xDD, 0xDD, 0xDD), Color(0x11, 0x11, 0x11), Color(0x11, 0x11, 0x11)
 };
 
-void increment_ppu_addr() {
-    ppu_regs.ppu_addr += (ppu_regs.ppu_ctrl & 0b100) ? 32 : 1;
+bool render_background() {
+    return (ppu_regs.ppu_mask & 0b00001000) >> 3;
+}
+
+bool render_sprites() {
+    return (ppu_regs.ppu_mask & 0b00010000) >> 4;
 }
 
 uint16_t mirror_vram_addr(uint16_t addr) {
     if (mirroring == HORIZONTAL) {
-        if (addr >= 0x2400 && addr < 0x2800) {
+        if (addr >= 0x2400 && addr < 0x2C00) {
             return addr - 0x2400;
         }
         else if (addr >= 0x2C00) {
-            return addr - 0x2400;
+            return addr - 0x2800;
         }
         return addr - 0x2000;
-    }
-    else {
+    } else {
         if (addr >= 0x2800 && addr < 0x2C00) {
             return addr - 0x2800;
         }
         else if (addr >= 0x2C00) {
             return addr - 0x2800;
         }
-        return addr - 0x2800;
+        return addr - 0x2000;
     }
 }
 
-uint8_t read_ppu() {
-    uint16_t addr = ppu_regs.ppu_addr;
-    increment_ppu_addr();
-    uint8_t result = 0;
-
+void ppu_write(uint16_t addr, uint8_t data) {
     if (0 <= addr && addr <= 0x1FFF) {
-        result = data_buffer;
-        data_buffer = chr_rom[addr];
-        // read from CHR ROM
+        // can't happen
     }
-    else if(0x2000 <= addr && addr <= 0x2FFF) {
-        result = data_buffer;
-        data_buffer = vram[mirror_vram_addr(addr)];
-        // read from VRAM
+    else if (0x2000 <= addr && addr <= 0x2FFF) {
+        vram[mirror_vram_addr(addr)] = data;
+        // write VRAM
     }
     else if (0x3F00 <= addr && addr <= 0x3FFF) {
-        result = palette_table[addr % 0x20];
-
+        addr &= 0x1F;
+        if ((addr & 0b11) == 0) { // mirroring
+            addr &= 0x7;
+        }
+        palette_table[addr] = data;
         // read from palette table
+    }
+}
+
+uint8_t ppu_read(uint16_t addr) {
+    if (0 <= addr && addr <= 0x1FFF) {
+        return chr_rom[addr];
+        // read from CHR ROM
+    } else if (0x2000 <= addr && addr <= 0x2FFF) {
+        return vram[mirror_vram_addr(addr)];
+        // read from VRAM
+    } else if (0x3F00 <= addr && addr <= 0x3FFF) {
+        addr &= 0x1F;
+        if ((addr & 0b11) == 0) { // mirroring
+            addr &= 0x7;
+        }
+        return palette_table[addr];
+    } else {
+        return 0; // unreachable
     }
 }
 
@@ -83,34 +126,367 @@ uint8_t vblank_nmi() {
     return ppu_regs.ppu_ctrl >> 7;
 }
 
-void write_to_ctrl(uint8_t value) {
-    uint8_t before_status = vblank_nmi();
-    ppu_regs.ppu_ctrl = value;
-    if (!before_status && vblank_nmi && vblank) {
-        // generate NMI
-    }
-
+uint8_t vblank() {
+    return ppu_regs.ppu_status >> 7;
 }
 
-bool ppu_cycle(uint8_t cycles) {
-    ppuCycles += cycles;
-    if (ppuCycles >= 341) {
-        ppuCycles -= 341;
-        scanline += 1;
-    }
+uint16_t fine_y() {
+    return (ppu_internals.v & 0b111000000000000) >> 12;
+}
 
-    if (scanline == 241) {
-        if (vblank_nmi()) {
-            vblank = true;
-            // send NMI signal to CPU
+uint16_t nametable_y() {
+    return (ppu_internals.v & 0b100000000000) >> 11;
+}
+
+uint16_t nametable_x() {
+    return (ppu_internals.v & 0b10000000000) >> 10;
+}
+
+uint16_t coarse_y() {
+    return (ppu_internals.v & 0b1111100000) >> 5;
+}
+
+uint16_t coarse_x() {
+    return ppu_internals.v & 0b11111;
+}
+
+uint8_t tall_sprites() {
+    return ppu_regs.ppu_ctrl & 0b100000;
+}
+
+void sprite_evaluation() {
+    if (0 <= scanline && scanline < 240) {
+        if (1 <= ppuCycles && ppuCycles <= 64) {
+            if (ppuCycles & 0b1) {
+                oam_read = 0xFF;
+            } else {
+                oam_secondary[(ppuCycles >> 1) - 1] = oam_read;
+            }
+        } else if (65 <= ppuCycles && ppuCycles <= 256) {
+            if (sprite_index_in_oam_data < 64) {
+                if (ppuCycles & 0b1) {
+                    oam_read = oam_data[sprite_index_in_oam_data * 4 + byte_of_sprite];
+                } else {
+                    if (sprites >= 8) {
+                        if (scanline >= oam_read && (scanline < oam_read + 8 || (tall_sprites() && scanline < oam_read + 16))) {
+                            sprite_index_in_oam_data = 64; // stop sprite evaluation this scanline
+                            ppu_regs.ppu_status |= 0b00100000;
+                        } else {
+                            sprite_index_in_oam_data++;
+                            // bug in original hardware that some games rely on
+                            if (byte_of_sprite == 3) {
+                                byte_of_sprite = 0;
+                            } else {
+                                byte_of_sprite++;
+                            }
+                        }
+                    } else if (byte_of_sprite == 0) {
+                        if (scanline >= oam_read && (scanline < oam_read + 8 || (tall_sprites() && scanline < oam_read + 16))) {
+                            oam_secondary[sprites * 4] = oam_read;
+                            byte_of_sprite++;
+                            if (sprite_index_in_oam_data == 0) {
+                                sprite_0_in_next_scanline = true;
+                            }
+                        } else {
+                            sprite_index_in_oam_data++;
+                        }
+                    } else {
+                        oam_secondary[sprites * 4 + byte_of_sprite] = oam_read;
+                        if (byte_of_sprite == 3) {
+                            byte_of_sprite = 0;
+                            sprite_index_in_oam_data++;
+                            sprites++;
+                        } else {
+                            byte_of_sprite++;
+                        }
+                    }
+                }
+            }
+        } else if (257 <= ppuCycles && ppuCycles <= 320) {
+            if ((ppuCycles & 0b111) == 0b000) {
+                // fetch sprite tile data
+                uint8_t secondary_index = (ppuCycles - 264) / 8;
+                uint8_t attributes = oam_secondary[4 * secondary_index + 2];
+                uint16_t tile_index = oam_secondary[4 * secondary_index + 1];
+                uint16_t y_index = (scanline - oam_secondary[4 * secondary_index]);
+                sprite_xes[secondary_index] = oam_secondary[4 * secondary_index + 3];
+                if (tall_sprites()) { 
+                    tile_index = (((tile_index & 0b1) << 7) | (tile_index >> 1)) << 5;        
+                    if (attributes & 0b10000000) { // vertical flip
+                        y_index = 16 - y_index;
+                    }
+                } else {
+                    tile_index = (((uint16_t) (ppu_regs.ppu_ctrl & 0b1000)) << 9) | (tile_index << 4);
+                    if (attributes & 0b10000000) { // vertical flip
+                        y_index = 8 - y_index;
+                    }
+                }
+                uint8_t plane_0 = ppu_read(tile_index + ((tall_sprites() && y_index >= 8) << 4) | 0b0000 | (y_index % 8));
+                uint8_t plane_1 = ppu_read(tile_index + ((tall_sprites() && y_index >= 8) << 4) | 0b1000 | (y_index % 8));
+                if (!(attributes & 0b1000000)) {
+                    for (uint8_t i = 0; i < 8; i++) {
+                        uint16_t index = ((i == 7) ? ((plane_1 & 1) << 1) : ((plane_1 & (1 << (7 - i))) >> (6 - i))) | ((plane_0 & (1 << (7 - i))) >> (7 - i));
+                        sprite_tile_data[secondary_index][i] = (attributes & 0b100000) | ((attributes & 0b11) << 2) | index;
+                        // priority flag added for muxing
+                    }
+                } else { // horizontal flip
+                    for (uint8_t i = 0; i < 8; i++) {
+                        uint16_t index = ((i == 0) ? ((plane_1 & 1) << 1) : ((plane_1 & (1 << i)) >> (i - 1))) | ((plane_0 & (1 << i)) >> i);
+                        sprite_tile_data[secondary_index][i] = (attributes & 0b100000) | ((attributes & 0b11) << 2) | index;
+                        // priority flag added for muxing
+                    }
+                }
+            }
+        }
+    }
+}
+
+uint8_t sprite_pixel() {
+    uint8_t used_sprite = 8;
+    int16_t diff;
+    for (uint8_t i = 0; i < 8; i++) {
+        diff = ppuCycles - sprite_xes[i];
+        if (diff >= 0 && diff < 8 && (sprite_tile_data[i][diff] % 16)) {
+            used_sprite = i;
+            break;
+        }
+    }
+    sprite_0_used = (used_sprite == 0) && sprite_0_in_scanline;
+    if (used_sprite < 8) {
+        return sprite_tile_data[used_sprite][diff];
+    } else {
+        return 0b00100000; // no sprites hit
+    }
+}
+
+uint8_t choose_pixel(uint8_t sprite_pixel, uint8_t bg_pixel) {
+    if (sprite_0_used && render_background() && render_sprites() && ppuCycles != 255) {
+        if (ppuCycles >= 8 || ((ppu_regs.ppu_mask & 0b110) == 0b110)) {
+            if ((sprite_pixel & 0b11) && (bg_pixel & 0b11)) {
+                ppu_regs.ppu_status |= 0b01000000; // sprite 0 hit
+            }
         }
     }
 
-    if (scanline >= 262) {
-        scanline = 0;
-        vblank = false;
-        return true;
+    if (!render_sprites()) {
+        return bg_pixel;
+    } else if (!render_background()) {
+        return (1 << 4) | (sprite_pixel & 0b1111);
+    } else if ((sprite_pixel & 0b11) == 0b00) {
+        return bg_pixel;
+    } else if ((bg_pixel & 0b11) == 0b00) {
+        return (1 << 4) | (sprite_pixel & 0b1111);
+    } else if (sprite_pixel & 0b100000) {
+        return bg_pixel;
+    } else {
+        return (1 << 4) | (sprite_pixel & 0b1111);
+    }
+}
+
+void update_shift() {
+    shift_pattern_low = (shift_pattern_low & 0xFF00) | tile_low;
+    shift_pattern_high = (shift_pattern_high & 0xFF00) | tile_high;
+    if (attribute & 0b01) {
+        shift_attribute_low = (shift_attribute_low & 0xFF00) | 0xFF;
+    } else {
+        shift_attribute_low = shift_attribute_low & 0xFF00;
     }
 
-    return false;
+    if (attribute & 0b10) {
+        shift_attribute_high = (shift_attribute_high & 0xFF00) | 0xFF;
+    } else {
+        shift_attribute_high = shift_attribute_high & 0xFF00;
+    }
+}
+
+void shift_left() {
+    shift_pattern_low = shift_pattern_low << 1;
+    shift_pattern_high = shift_pattern_high << 1;
+    shift_attribute_low = shift_attribute_low << 1;
+    shift_attribute_high = shift_attribute_high << 1;
+}
+
+void ppu_cycle() {
+
+    sprite_evaluation();
+
+    if (scanline >= -1 && scanline < 240) {
+        if (scanline == 0 && ppuCycles == 0) {
+            ppuCycles = 1;
+        }
+
+        if (scanline == -1 && ppuCycles == 1) {
+            ppu_regs.ppu_status &= 0b00011111;
+        }
+
+        if ((ppuCycles >= 2 && ppuCycles < 258) || (ppuCycles >= 321 && ppuCycles < 338)) {
+            if (render_background()) {
+                shift_left();
+            }
+            uint16_t background;
+            switch ((ppuCycles - 1) % 8) {
+                case 0:
+                    update_shift();
+                    name_table = ppu_read(0x2000 | (ppu_internals.v & 0x0FFF));
+                    break;
+                case 2: 
+                    attribute = ppu_read(0x23C0 | (nametable_y() << 11)
+                    | (nametable_x() << 10)
+                    | ((coarse_y() >> 2) << 3)
+                    | (coarse_x() >> 2));
+
+                    if (coarse_y() & 0x02) {
+                        attribute >>= 4;
+                    }
+                    if (coarse_x() & 0x02) {
+                        attribute >>= 2;
+                    }
+                    attribute &= 0x3;
+                    break;
+                case 4: 
+                    background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
+                    tile_low = ppu_read((background << 12) | (((uint16_t) name_table) << 4) | (fine_y()));
+                    break;
+                case 6:
+                    background = (ppu_regs.ppu_ctrl & 0b10000) >> 4;
+                    tile_high = ppu_read((background << 12) | (((uint16_t) name_table) << 4) | (fine_y() + 8));
+                    break;
+                case 7:
+                    if (render_background() || render_sprites()) {
+                        if (coarse_x() == 31) {
+                            ppu_internals.v &= 0xFFE0; // reset coarse x to 0
+                            uint8_t inverse_name_table_x = nametable_x();
+                            inverse_name_table_x = inverse_name_table_x ^ 0b1;
+                            ppu_internals.v = (ppu_internals.v & 0b111101111111111) | (inverse_name_table_x << 10);
+                        }
+                        else {
+                            ppu_internals.v++; // increment coarse x
+                        }
+                    }
+                    break;
+            }
+        }
+        // scroll down 1 line
+        if (ppuCycles == 256) {
+            if (render_background() || render_sprites()) {
+                uint16_t fineY = fine_y();
+                if (fineY < 7) {
+                    fineY++;
+                    fineY <<= 12;
+                    ppu_internals.v = (ppu_internals.v & 0xFFF) | fineY;
+                }
+                else {
+                    ppu_internals.v &= 0xFFF;
+                    uint16_t coarseY = coarse_y();
+                    if (coarseY < 29) {
+                        coarseY++;
+                    }
+                    else {
+                        coarseY = 0;
+                        uint16_t inverse_name_table_y = nametable_y();
+                        inverse_name_table_y = inverse_name_table_y ^ 0b1;
+                        inverse_name_table_y = inverse_name_table_y << 11;
+                        ppu_internals.v = (ppu_internals.v & 0b111011111111111) | inverse_name_table_y; 
+                    }
+                    coarseY <<= 5;
+                    ppu_internals.v = (ppu_internals.v & 0b111110000011111) | coarseY;
+                }        
+            }
+        }
+
+        // reset x value
+        if (ppuCycles == 257) {
+            update_shift();
+            if (render_background() || render_sprites()) {
+                uint8_t coarseX_t = ppu_internals.t & 0x1F;
+                ppu_internals.v = (ppu_internals.v & 0xFFE0) | coarseX_t;
+                uint16_t nametableX_t = ppu_internals.t & 0x400;
+                ppu_internals.v = (ppu_internals.v & 0xFBFF) | nametableX_t;
+            }
+        }
+
+        // redundant nametable fetch
+        if (ppuCycles == 338 || ppuCycles == 340) {
+            name_table = ppu_read(0x2000 | (ppu_internals.v & 0x0FFF));
+        }
+        if (scanline == -1 && ppuCycles >= 280 && ppuCycles < 305) {
+            if (render_background() || render_sprites()) {
+                uint16_t fineY_T = ppu_internals.t & 0b111000000000000; 
+                uint16_t nametableY_t = ppu_internals.t & 0b100000000000;
+                uint16_t coarseY_t = ppu_internals.t & 0b1111100000;
+                ppu_internals.v = (ppu_internals.v & 0b0000010000011111) |  fineY_T
+                | nametableY_t | coarseY_t;
+            } 
+        }
+    }
+
+    if (scanline == 241 && ppuCycles == 1) {
+        ppu_regs.ppu_status = ppu_regs.ppu_status | 0b10000000;
+        if (vblank_nmi()) {
+            cpu.nonmaskableInterrupt();
+        }
+    }
+
+    // draw pixels
+    uint8_t pixel;
+    uint8_t palette;
+    
+    if (render_background()) {
+        uint16_t rendered_bit = 0x8000 >> ppu_internals.x;
+        uint8_t pixel_low = (shift_pattern_low & rendered_bit) > 0;
+        uint8_t pixel_high = (shift_pattern_high & rendered_bit) > 0;
+        pixel = (pixel_high << 1) | pixel_low;
+
+        uint8_t palette_low = (shift_attribute_low & rendered_bit) > 0;
+        uint8_t palette_high = (shift_attribute_high & rendered_bit) > 0;
+
+        palette = (palette_high << 1) | palette_low;
+    }
+
+    uint8_t paletteChoice = choose_pixel(sprite_pixel(), (palette << 2) + pixel);
+    Color pixelColor = SYSTEM_PALETTE[ppu_read(0x3F00 | paletteChoice)];
+    if (ppuCycles < 256 && scanline < 240 && scanline >= 0) {
+        image_buffer[scanline][ppuCycles] = pixelColor;
+    }
+
+    ppuCycles++;
+
+    if (ppuCycles == 341 || (odd_frame && scanline == -1 && ppuCycles == 340 && (render_background() || render_sprites()))) {
+        ppuCycles = 0;
+        sprite_0_in_scanline = sprite_0_in_next_scanline;
+        sprites = 0;
+        byte_of_sprite = 0;
+        sprite_index_in_oam_data = 0;
+        sprite_0_in_next_scanline = false;
+        scanline++;
+        if (scanline == 261) {
+            scanline = -1;
+            odd_frame = !odd_frame;
+            if (ppuCycles == 0) {
+                draw_window();
+            }
+        }
+    }
+}
+
+Color mask_pixel(Color color) {
+    if (ppu_regs.ppu_mask & 0b1) {
+        // render in grayscale
+        uint8_t average = (uint8_t) (((uint16_t) std::get<0>(color) + (uint16_t) std::get<1>(color) + (uint16_t) std::get<2>(color)) / 3);
+        return Color(average, average, average);
+    } else {
+        if (ppu_regs.ppu_mask & 0b100000) {
+            // emphasize red
+            color = Color(std::get<0>(color) + (std::get<0>(color) < 0xE0 ? 0x20 : 0x0), std::get<1>(color), std::get<2>(color));
+        }
+        if (ppu_regs.ppu_mask & 0b1000000) {
+            // emphasize green
+            color = Color(std::get<0>(color), std::get<1>(color) + (std::get<1>(color) < 0xE0 ? 0x20 : 0x0), std::get<2>(color));
+        }
+        if (ppu_regs.ppu_mask & 0b10000000) {
+            // emphasize blue
+            color = Color(std::get<0>(color), std::get<1>(color), std::get<2>(color) + (std::get<2>(color) < 0xE0 ? 0x20 : 0x0));
+        }
+        return color;
+    }   
 }

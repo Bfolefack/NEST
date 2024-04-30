@@ -1,11 +1,15 @@
-compile:
-	gcc -g *.c -o nest
-
-debug:
-	gdb nest $(file)
-
 clean:
 	-rm *.exe
+	-rm *.out
 
-sdl:
-	g++ -I src/include -L src/lib -o nest -g vidya.c -lmingw32 -lSDL2main -lSDL2
+build:
+	g++ -O3 -I src/include -L src/lib -o nest -g *.cpp -lmingw32 -lSDL2main -lSDL2 -lsamplerate
+
+play:
+	./nest.exe games/$(game).nes
+
+play-tas:
+	./nest.exe games/$(game).nes -i tas/$(tas).tas
+
+create-tas:
+	./nest.exe games/$(game).nes -o tas/$(tas).tas
