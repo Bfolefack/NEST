@@ -441,12 +441,12 @@ void ppu_cycle() {
     
     if (render_background()) {
         uint16_t rendered_bit = 0x8000 >> ppu_internals.x;
-        uint8_t pixel_low = (shift_pattern_low & rendered_bit) >> (15 - ppu_internals.x);
-        uint8_t pixel_high = (shift_pattern_high & rendered_bit) >> (15 - ppu_internals.x);
+        uint8_t pixel_low = (shift_pattern_low & rendered_bit) > 0;
+        uint8_t pixel_high = (shift_pattern_high & rendered_bit) > 0;
         pixel = (pixel_high << 1) | pixel_low;
 
-        uint8_t palette_low = (shift_attribute_low & rendered_bit) >> (15 - ppu_internals.x);
-        uint8_t palette_high = (shift_attribute_high & rendered_bit) >> (15 - ppu_internals.x);
+        uint8_t palette_low = (shift_attribute_low & rendered_bit) > 0;
+        uint8_t palette_high = (shift_attribute_high & rendered_bit) > 0;
 
         palette = (palette_high << 1) | palette_low;
     }
