@@ -7,7 +7,6 @@
 #include "loadtas.h"
 #include "cpu.h"
 #include "ppu.h"
-#include "test.h"
 #include "vidya.h"
 
 uint64_t cycle_number = 0;
@@ -65,11 +64,8 @@ int main (int argc, char** argv, char** envp) {
     while (1) {
         apu_cycle();
         ppu_cycle();
-        //play_sound();
         ppu_cycle();
-        //play_sound();
         ppu_cycle();
-        //play_sound();
         cpu.clock();
         if (cycle_number % 29780 == 0) {
             if (use_tas && tas_input_index < tas_inputs.size() && frame_number == tas_inputs[tas_input_index].first) {

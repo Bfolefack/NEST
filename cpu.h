@@ -7,7 +7,6 @@
 class CPU {
 public:
     CPU();
-    // ~CPU();
 
     struct Flags {
         bool C; // Carry

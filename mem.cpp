@@ -87,7 +87,7 @@ uint8_t read(uint16_t address) {
         } else if (address == 0x4017) {
             return 0;
         } else {
-            return 0; // TODO - APU and I/O registers
+            return 0;
         }
     } else if (0x6000 <= address && address < 0x8000) {
         return prg_ram[address - 0x6000];
@@ -119,7 +119,7 @@ void write(uint16_t address, uint8_t data) {
                 if (!(temp >> 7) && ppu_regs.ppu_ctrl >> 7 && ppu_regs.ppu_status >> 7) {
                     cpu.nonmaskableInterrupt();
                 }
-                return; // TODO : emulate PPU power-up state?
+                return;
             case 1: 
                 ppu_regs.ppu_mask = data;
                 return;

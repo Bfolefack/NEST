@@ -19,8 +19,6 @@
 
 SDL_Window *window = NULL;
 SDL_Surface *screenSurface = NULL;
-SDL_Window *wave_window = NULL;
-SDL_Surface *wave_screenSurface = NULL;
 
 Joypad P1_joypad = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 Pulse pulse1 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -84,8 +82,7 @@ void init_SDL()
     }
     else
     {
-        window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-        wave_window = SDL_CreateWindow("Waveform", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WAVEFORM_SIZE, 500, SDL_WINDOW_SHOWN);
+        window = SDL_CreateWindow("NEST", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
         if (window == NULL)
         {
             printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -93,14 +90,11 @@ void init_SDL()
         else
         {
             screenSurface = SDL_GetWindowSurface(window);
-            wave_screenSurface = SDL_GetWindowSurface(wave_window);
         }
     }
 
     SDL_FillRect(screenSurface, NULL, SDL_MapRGB(screenSurface->format, 0x00, 0x00, 0x00));
-    SDL_FillRect(wave_screenSurface, NULL, SDL_MapRGB(wave_screenSurface->format, 0x00, 0x00, 0x00));
     SDL_UpdateWindowSurface(window);
-    SDL_UpdateWindowSurface(wave_window);
     srand(time(NULL));
 
     pulse1_waveform = (uint8_t *)calloc(WAVEFORM_SIZE, sizeof(uint8_t));
@@ -420,55 +414,8 @@ float process_sound()
     uint8_t noise_wave = process_noise(noise);
     float pulse_out = pulse1_wave == 0 && pulse2_wave == 0 ? 0 : 95.88f / ((8128.0f / (pulse1_wave + pulse2_wave)) + 100.f);
     float tnd_out = triangle_wave == 0 && noise_wave == 0 ? 0 : 159.79f / ((1.0f / (triangle_wave / 8227.0f + noise_wave / 122410.0f)) + 100.f);
-
-    static uint16_t waveform_index = 0;
-    pulse1_waveform[waveform_index] = pulse1_wave;
-    pulse2_waveform[waveform_index] = pulse2_wave;
-    triangle_waveform[waveform_index] = triangle_wave;
-    noise_waveform[waveform_index] = noise_wave;
-    waveform_index++;
-    if (waveform_index == WAVEFORM_SIZE)
-    {
-        waveform_index = 0;
-        SDL_FillRect(wave_screenSurface, NULL, SDL_MapRGB(wave_screenSurface->format, 0x00, 0x00, 0x00));
-        int factor = 2;
-        for (int i = 0; i < WAVEFORM_SIZE; i++)
-        {
-            SDL_Rect rect = {i * factor, 100 - (pulse1_waveform[i] * (100 / 16)) + 1, factor, 1};
-            SDL_FillRect(wave_screenSurface, &rect, SDL_MapRGB(wave_screenSurface->format, pulse1.enable ? 0x00 : 0xFF, pulse1.enable ? 0xFF : 0x00, 0x00));
-            rect = {i * factor, 200 - (pulse2_waveform[i] * (100 / 16)) + 1, factor, 1};
-            SDL_FillRect(wave_screenSurface, &rect, SDL_MapRGB(wave_screenSurface->format, pulse2.enable ? 0x00 : 0xFF, pulse2.enable ? 0xFF : 0x00, 0x00));
-            rect = {i * factor, 300 - (triangle_waveform[i] * (100 / 16)) + 1, factor, 1};
-            SDL_FillRect(wave_screenSurface, &rect, SDL_MapRGB(wave_screenSurface->format, triangle.enable ? 0x00 : 0xFF, triangle.enable ? 0xFF : 0x00, 0x00));
-            rect = {i * factor, 400 - (noise_waveform[i] * (100 / 16)) + 1, factor, 1};
-            SDL_FillRect(wave_screenSurface, &rect, SDL_MapRGB(wave_screenSurface->format, noise.enable ? 0x00 : 0xFF, noise.enable ? 0xFF : 0x00, 0x00));
-        }
-        SDL_UpdateWindowSurface(wave_window);
-    }
-
     return 5 * (pulse_out + tnd_out);
 }
-
-
-// uint64_t generate_rotator()
-// {
-//     uint64_t rotator = 0;
-//     float accumulator = 0;
-//     for (int i = 0; i < 64; i++)
-//     {
-//         accumulator += (1789773.f / TARGET_FREQUENCY) - (int)((1789773.f / TARGET_FREQUENCY));
-//         if (accumulator < 1)
-//         {
-//             rotator |= 0 << i;
-//         }
-//         else
-//         {
-//             rotator |= 1ull << i;
-//             accumulator -= 1;
-//         }
-//     }
-//     return rotator;
-// }
 
 void play_sound()
 {

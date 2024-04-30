@@ -1,7 +1,6 @@
 #include "system_vars.h"
 #include "ppu.h"
 #include "vidya.h"
-#include "test.h"
 #include <tuple>
 #include <array>
 
@@ -156,7 +155,6 @@ uint8_t tall_sprites() {
 }
 
 void sprite_evaluation() {
-    // TODO OAM secondary not updated correctly
     if (0 <= scanline && scanline < 240) {
         if (1 <= ppuCycles && ppuCycles <= 64) {
             if (ppuCycles & 0b1) {
