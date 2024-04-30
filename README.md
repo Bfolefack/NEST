@@ -1,12 +1,12 @@
 # NEST
 A TAS enhanced emulator for the NES
 
-# How to Run:
+## How to Run ##
 1) Clone this repository
 2) Run "make build" in the console (make sure you have g++ installed)
 3) Run a command to play a game, play a TAS, or create a TAS (see below for details)
 
-# Instructions
+## Instructions ##
 To compile the project (make sure to do this first): make build  
 To play a game: make play game=[game filename, without extension]  
 	ex. make play game=donkey  
@@ -19,7 +19,7 @@ Note: The make command may vary (you might need to use “mingw32-make” instea
 
 TAS examples: We have provided two example TAS files in the tas folder, one for Super Mario Bros. and one for Donkey Kong.  
 
-# Controls:  
+## Controls ##  
 WASD/Arrow Keys: Move  
 Space/X: A  
 Left Shift/Z: B  
